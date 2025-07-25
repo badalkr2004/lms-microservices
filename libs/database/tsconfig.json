@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist", // OK to customize
+    "rootDir": "../../", // Set rootDir to monorepo root (or just remove it!)
+    "composite": true // Optional: for project references
+  },
+  "include": [
+    "src", // Service code
+    "../../libs/common/src", // Shared libs
+    "../../libs/logger/src"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

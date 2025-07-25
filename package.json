@@ -1,0 +1,55 @@
+{
+  "name": "lms-backend",
+  "version": "1.0.0",
+  "description": "LMS Backend Microservices",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n \"gateway,user,course,payment,assessment,analytics,notification,live,file\" -c \"bgBlue,bgGreen,bgYellow,bgMagenta,bgCyan,bgRed,bgWhite,bgBlack,bgGray\" \"pnpm --filter=@lms/api-gateway dev\" \"pnpm --filter=@lms/user-service dev\" \"pnpm --filter=@lms/course-service dev\" \"pnpm --filter=@lms/payment-service dev\" \"pnpm --filter=@lms/assessment-service dev\" \"pnpm --filter=@lms/analytics-service dev\" \"pnpm --filter=@lms/notification-service dev\" \"pnpm --filter=@lms/live-session-service dev\" \"pnpm --filter=@lms/file-service dev\"",
+    "build": "pnpm -r build",
+    "build:libs": "pnpm --filter @lms/common build && pnpm --filter @lms/database build && pnpm --filter @lms/logger build",
+    "build:services": "pnpm --filter='./services/*' build",
+    "test": "pnpm -r test",
+    "test:unit": "pnpm -r test:unit",
+    "test:integration": "pnpm -r test:integration",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
+    "type-check": "pnpm -r type-check",
+    "clean": "pnpm -r clean",
+    "db:generate": "pnpm --filter='@lms/database' db:generate",
+    "db:migrate": "pnpm --filter='@lms/database' db:migrate",
+    "db:seed": "pnpm --filter='@lms/database' db:seed",
+    "db:reset": "pnpm --filter='@lms/database' db:reset",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "start:prod": "pnpm -r start",
+    "install:all": "pnpm install",
+    "update:deps": "pnpm -r update"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.38.0",
+    "@typescript-eslint/parser": "^8.38.0",
+    "concurrently": "^9.2.0",
+    "eslint": "^9.32.0",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.4",
+  "workspaces": [
+    "libs/*",
+    "services/*"
+  ]
+}

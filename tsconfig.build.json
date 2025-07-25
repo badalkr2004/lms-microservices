@@ -1,0 +1,26 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./libs/common"
+    },
+    {
+      "path": "./libs/logger"
+    },
+    {
+      "path": "./services/user-service"
+    },
+    {
+      "path": "./services/live-session-service"
+    },
+    {
+      "path": "./services/course-service"
+    },
+    {
+      "path": "./services/payment-service"
+    },
+    {
+      "path": "./services/user-service"
+    }
+  ]
+}

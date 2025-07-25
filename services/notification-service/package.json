@@ -1,0 +1,40 @@
+{
+  "name": "@lms/notification-service",
+  "version": "1.0.0",
+
+  "scripts": {
+    "build": "tsc",
+    "dev": "nodemon --exec tsx src/index.ts",
+    "start": "node dist/index.js",
+    "clean": "rimraf dist",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "@lms/common": "workspace:*",
+    "@lms/database": "workspace:*",
+    "@lms/logger": "workspace:*",
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "bullmq": "^5.56.7",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "firebase-admin": "^13.4.0",
+    "helmet": "^8.1.0",
+    "nodemailer": "^7.0.5",
+    "socket.io": "^4.8.1",
+    "twilio": "^5.8.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/nodemailer": "^6.4.17",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.4",
+    "tsx": "^4.20.3",
+    "vitest": "^3.2.4"
+  }
+}
