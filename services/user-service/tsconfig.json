@@ -17,6 +17,9 @@
       ],
       "@logger/*": [
         "../../libs/logger/src/*"
+      ],
+      "@database/*": [
+        "../../libs/database/src/*"
       ]
     }
   },

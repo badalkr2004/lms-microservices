@@ -1,17 +1,29 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "dist", // OK to customize
-    "rootDir": "../../", // Set rootDir to monorepo root (or just remove it!)
-    "composite": true // Optional: for project references
+    "outDir": "./dist",
+    "rootDir": "./src",
+    // Important: composite must be true for project references
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    // Build info location
+    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
+    // Module resolution for this package
+    "baseUrl": "./src",
+    "paths": {
+      "@shared/*": [
+        "./*"
+      ]
+    }
   },
   "include": [
-    "src", // Service code
-    "../../libs/common/src", // Shared libs
-    "../../libs/logger/src"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts"
   ]
 }
