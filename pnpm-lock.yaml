@@ -664,6 +664,9 @@ importers:
       express-validator:
         specifier: ^7.2.1
         version: 7.2.1
+      firebase-admin:
+        specifier: ^13.4.0
+        version: 13.4.0
       helmet:
         specifier: ^8.1.0
         version: 8.1.0
@@ -673,6 +676,9 @@ importers:
       morgan:
         specifier: ^1.10.1
         version: 1.10.1
+      ms:
+        specifier: 2.1.3
+        version: 2.1.3
       multer:
         specifier: ^2.0.2
         version: 2.0.2
@@ -688,6 +694,9 @@ importers:
       sharp:
         specifier: ^0.34.3
         version: 0.34.3
+      zod:
+        specifier: ^4.0.10
+        version: 4.0.10
     devDependencies:
       '@types/compression':
         specifier: ^1.8.1
@@ -704,6 +713,9 @@ importers:
       '@types/morgan':
         specifier: ^1.9.10
         version: 1.9.10
+      '@types/ms':
+        specifier: 2.1.0
+        version: 2.1.0
       '@types/multer':
         specifier: ^2.0.0
         version: 2.0.0

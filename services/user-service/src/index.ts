@@ -1,3 +1,4 @@
+dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -6,14 +7,24 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { errorHandler } from '@lms/common';
 import { logger } from '@lms/logger';
-dotenv.config();
+import { db, users } from '@lms/database';
+import { initFirebase } from './config/firebase';
+import { authRoutes } from './routes/auth.routes';
+// import { userRoutes } from './routes/user.routes';
+
+initFirebase();
 
 const app = express();
 const PORT = process.env.USER_SERVICE_PORT || 3001;
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin: '*',
+    credentials: true,
+  })
+);
 app.use(compression());
 app.use(morgan('combined'));
 app.use(express.json());
@@ -23,14 +34,19 @@ app.use(express.urlencoded({ extended: true }));
 // TODO: Add user routes
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
+  // const user = await db.select().from(users);
+  // console.log(user);
   res.json({
     status: 'OK',
+    // data: user,
     service: 'User Service',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
   });
 });
+app.use('/api/auth', authRoutes);
+// app.use('/api/users', userRoutes);
 
 // Global error handler
 app.use(errorHandler);
