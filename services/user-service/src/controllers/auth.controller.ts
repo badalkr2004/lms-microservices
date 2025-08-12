@@ -123,7 +123,7 @@ export class AuthController {
         role: user.role,
       });
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Authentication successful',
         data: {
@@ -140,7 +140,7 @@ export class AuthController {
       });
     } catch (error) {
       logger.error('Firebase authentication error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Authentication failed',
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -204,7 +204,7 @@ export class AuthController {
         role: newUser.role,
       });
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         message: 'User registered successfully',
         data: {
@@ -221,7 +221,7 @@ export class AuthController {
       });
     } catch (error) {
       logger.error('Registration error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Registration failed',
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -299,7 +299,7 @@ export class AuthController {
         role: user.role,
       });
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Login successful',
         data: {
@@ -316,7 +316,7 @@ export class AuthController {
       });
     } catch (error) {
       logger.error('Login error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Login failed',
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -355,14 +355,14 @@ export class AuthController {
         role: user.role,
       });
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Token refreshed successfully',
         data: { tokens },
       });
     } catch (error) {
       logger.error('Token refresh error:', error);
-      res.status(401).json({
+      return res.status(401).json({
         success: false,
         message: 'Invalid refresh token',
       });
@@ -389,7 +389,7 @@ export class AuthController {
         .where(eq(userProfiles.userId, user.id))
         .limit(1);
 
-      res.json({
+      return res.json({
         success: true,
         data: {
           user: {
@@ -404,7 +404,7 @@ export class AuthController {
       });
     } catch (error) {
       logger.error('Get user error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to get user information',
       });
