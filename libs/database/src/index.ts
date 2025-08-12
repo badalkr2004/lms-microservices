@@ -25,3 +25,10 @@ export * from './schemas/payments';
 export * from './schemas/live-sessions';
 export * from './schemas/proctoring';
 export * from './schemas/assessments';
+export * from './schemas/courses';
+export * from './schemas/enrollments';
+export * from './schemas/notifications';
+export * from './schemas/settings';
+
+// Export utilities
+export * from './utils/password-hash';

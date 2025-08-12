@@ -14,13 +14,15 @@
     "type-check": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:seed": "tsx src/seed.ts",
-    "db:reset": "tsx src/reset.ts"
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx src/seeds/seed.ts",
+    "db:reset": "tsx src/seeds/reset.ts"
   },
   "dependencies": {
     "@lms/common": "workspace:*",
     "@lms/logger": "workspace:*",
     "@types/cors": "^2.8.19",
+    "bcrypt": "6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.4",
@@ -28,6 +30,7 @@
     "postgres": "^3.4.7"
   },
   "devDependencies": {
+    "@types/bcrypt": "6.0.0",
     "@types/pg": "^8.15.4",
     "drizzle-kit": "^0.31.4",
     "tsx": "^4.20.3"

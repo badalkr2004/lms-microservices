@@ -8,6 +8,13 @@
       "when": 1754845401327,
       "tag": "0000_mysterious_professor_monster",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1755022842187,
+      "tag": "0001_stormy_bloodstorm",
+      "breakpoints": true
     }
   ]
 }
