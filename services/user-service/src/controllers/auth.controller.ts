@@ -8,6 +8,8 @@ import { generateTokens, verifyRefreshToken } from '../utils/jwt.utils';
 import { AuthRequest } from '../types/auth.types';
 import { logger } from '@lms/logger';
 import { config } from '../config/config';
+import {HttpStatus, sendError, sendSuccess} from "@lms/common"
+
 
 export class AuthController {
   // Firebase Google OAuth Sign In/Up
@@ -27,10 +29,11 @@ export class AuthController {
       const { uid, email, name, picture } = decodedToken;
 
       if (!email) {
-        return res.status(400).json({
-          success: false,
-          message: 'Email is required for authentication',
-        });
+        // return res.status(HttpStatus.BAD_REQUEST).json({
+        //   success: false,
+        //   message: 'Email is required for authentication',
+        // });
+        return sendError(res,"Email is required for authentication", HttpStatus.BAD_REQUEST)
       }
 
       // Check if user already exists
