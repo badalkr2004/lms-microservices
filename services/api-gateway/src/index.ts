@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import { createProxyMiddleware, Options } from 'http-proxy-middleware';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import { conditionalAuth } from './middleware/auth.middleware';
 
 dotenv.config();
 
@@ -33,6 +34,9 @@ const limiter = rateLimit({
 });
 
 app.use('/api/', limiter);
+
+// Authentication middleware (applies to all API routes)
+app.use('/api/', conditionalAuth);
 
 // Service configurations
 interface ServiceConfig {
