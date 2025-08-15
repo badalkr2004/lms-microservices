@@ -1,7 +1,6 @@
 {
   "name": "@lms/course-service",
   "version": "1.0.0",
-
   "scripts": {
     "build": "tsc",
     "dev": "nodemon --exec tsx src/index.ts",
@@ -18,6 +17,7 @@
     "@lms/common": "workspace:*",
     "@lms/database": "workspace:*",
     "@lms/logger": "workspace:*",
+    "@lms/shared-auth": "workspace:*",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/morgan": "^1.9.10",

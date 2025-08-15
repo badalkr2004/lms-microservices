@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import { courseRoutes } from './routes/course.routes';
 
 dotenv.config();
 
@@ -17,6 +18,9 @@ app.use(compression());
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Routes
+app.use('/api/courses', courseRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

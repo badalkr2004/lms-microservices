@@ -1,0 +1,20 @@
+{
+  "name": "@lms/shared-auth",
+  "version": "1.0.0",
+  "description": "Shared authentication utilities for LMS microservices",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@lms/logger": "workspace:*",
+    "axios": "1.11.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3"
+  }
+}

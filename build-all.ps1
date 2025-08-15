@@ -14,7 +14,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "🔨 Building logger library..." -ForegroundColor Cyan
-Set-Location -Path ../logger
+Set-Location -Path libs/logger
 pnpm build
 if ($LASTEXITCODE -ne 0) {
   Write-Host "❌ Logger library build failed!" -ForegroundColor Red
@@ -22,7 +22,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "🔨 Building database library..." -ForegroundColor Cyan
-Set-Location -Path ../database
+Set-Location -Path libs/database
 pnpm build
 if ($LASTEXITCODE -ne 0) {
   Write-Host "❌ Database library build failed!" -ForegroundColor Red
@@ -31,7 +31,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # Build the user service
 Write-Host "🔨 Building user-service..." -ForegroundColor Cyan
-Set-Location -Path ../../services/user-service
+Set-Location -Path services/user-service
 pnpm build
 if ($LASTEXITCODE -ne 0) {
   Write-Host "❌ User service build failed!" -ForegroundColor Red
