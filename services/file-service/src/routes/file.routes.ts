@@ -23,7 +23,7 @@ router.get('/health', (req, res) => {
 });
 
 // Service-to-service routes (require API key)
-// router.use('/internal', serviceAuth);
+router.use('/internal', serviceAuth);
 
 // Generate presigned URL for upload (internal service call)
 router.post(
