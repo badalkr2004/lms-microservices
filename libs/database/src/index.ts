@@ -29,6 +29,7 @@ export * from './schemas/courses';
 export * from './schemas/enrollments';
 export * from './schemas/notifications';
 export * from './schemas/settings';
+export * from './schemas/file';
 
 // Export utilities
 export * from './utils/password-hash';
