@@ -10,6 +10,7 @@ import { logger } from '@lms/logger';
 import { db, users } from '@lms/database';
 import { initFirebase } from './config/firebase';
 import { authRoutes } from './routes/auth.routes';
+import { authVerificationRoutes } from './routes/auth-verification.routes';
 // import { userRoutes } from './routes/user.routes';
 
 initFirebase();
@@ -46,6 +47,7 @@ app.get('/health', async (req, res) => {
   });
 });
 app.use('/api/auth', authRoutes);
+app.use('/api/auth-verification', authVerificationRoutes);
 // app.use('/api/users', userRoutes);
 
 // Global error handler

@@ -21,7 +21,7 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
     next();
   } catch (error) {
     logger.error('Auth middleware error:', error);
-    res.status(401).json({
+    return res.status(401).json({
       success: false,
       message: 'Invalid or expired token',
     });
