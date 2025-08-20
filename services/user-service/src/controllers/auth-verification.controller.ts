@@ -193,7 +193,7 @@ export class AuthVerificationController {
       admin: {
         '*': ['*'], // Admin has all permissions
       },
-      instructor: {
+      teacher: {
         courses: ['create', 'read', 'update', 'delete'],
         assessments: ['create', 'read', 'update', 'delete'],
         students: ['read'],
