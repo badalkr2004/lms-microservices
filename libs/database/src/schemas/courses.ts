@@ -15,6 +15,7 @@ import { sql } from 'drizzle-orm';
 import { courseDifficulty, courseStatus, pricingType } from './enums';
 import { users } from './users';
 import { categories } from './categories';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 export const courses = pgTable(
   'courses',
@@ -75,6 +76,16 @@ export const courses = pgTable(
   })
 );
 
+// Zod schemas for validation
+export const insertCourseSchema = createInsertSchema(courses);
+export const selectCourseSchema = createSelectSchema(courses);
+
+// Types
+export type Course = typeof courses.$inferSelect;
+export type CreateCourseInput = typeof courses.$inferInsert;
+export type UpdateCourseInput = Partial<CreateCourseInput>;
+// export type CourseFilters = typeof courses.$inferSelect;
+
 export const courseChapters = pgTable(
   'course_chapters',
   {
@@ -96,6 +107,16 @@ export const courseChapters = pgTable(
     idxCourse: index('idx_course_chapters_course').on(t.courseId),
   })
 );
+
+// Zod schemas for validation
+export const insertChapterSchema = createInsertSchema(courses);
+export const selectChapterSchema = createSelectSchema(courses);
+
+// Types
+export type Chapter = typeof courseChapters.$inferSelect;
+export type CreateChapterInput = typeof courseChapters.$inferInsert;
+export type UpdateChapterInput = Partial<CreateChapterInput>;
+export type ChapterFilters = typeof courseChapters.$inferSelect;
 
 export const courseLectures = pgTable(
   'course_lectures',
@@ -130,3 +151,12 @@ export const courseLectures = pgTable(
     idxChapter: index('idx_course_lectures_chapter').on(t.chapterId),
   })
 );
+// Zod schemas for validation
+export const insertLectureSchema = createInsertSchema(courses);
+export const selectLectureSchema = createSelectSchema(courses);
+
+// Types
+export type Lecture = typeof courseLectures.$inferSelect;
+export type CreateLectureInput = typeof courseLectures.$inferInsert;
+export type UpdateLectureInput = Partial<CreateLectureInput>;
+export type LectureFilters = typeof courseLectures.$inferSelect;
