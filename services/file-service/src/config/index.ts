@@ -64,3 +64,31 @@ export const awsConfig = {
   bucket: config.AWS_S3_BUCKET,
   bucketUrl: config.AWS_S3_BUCKET_URL,
 } as const;
+
+export const muxConfig ={
+  MUX_TOKEN_ID: process.env.MUX_TOKEN_ID || '',
+  MUX_TOKEN_SECRET: process.env.MUX_TOKEN_SECRET || '',
+  MUX_SIGNING_KEY_ID: process.env.MUX_SIGNING_KEY_ID || '',
+  MUX_SIGNING_KEY_PRIVATE: process.env.MUX_SIGNING_KEY_PRIVATE || '',
+  MUX_WEBHOOK_SECRET: process.env.MUX_WEBHOOK_SECRET || '',
+  MUX_ENVIRONMENT_ID: process.env.MUX_ENVIRONMENT_ID || '',
+  
+  // Video Processing Configuration
+  MAX_VIDEO_SIZE: parseInt(process.env.MAX_VIDEO_SIZE || '5368709120'), // 5GB in bytes
+  SUPPORTED_VIDEO_FORMATS: [
+    'video/mp4',
+    'video/mpeg',
+    'video/quicktime',
+    'video/x-msvideo',
+    'video/x-ms-wmv',
+    'video/webm',
+    'video/x-flv',
+    'video/3gpp',
+    'video/x-matroska'
+  ],
+  VIDEO_UPLOAD_TIMEOUT: parseInt(process.env.VIDEO_UPLOAD_TIMEOUT || '3600'), // 1 hour
+  DEFAULT_VIDEO_EXPIRATION: parseInt(process.env.DEFAULT_VIDEO_EXPIRATION || '86400'), // 24 hours
+
+  // CORS Configuration for Mux uploads
+  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://127.0.0.1:5500',
+}
