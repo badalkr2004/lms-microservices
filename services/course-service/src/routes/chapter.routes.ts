@@ -4,7 +4,13 @@ import { ChapterController } from '../controllers/chapter.controller';
 import { ChapterService } from '../services/chapter.service';
 import { ChapterRepository } from '../repositories/chapter.repository';
 import { CourseRepository } from '../repositories/course.repository';
-import { authenticate, authorize } from '../middleware/auth';
+import {
+  authenticate,
+  authorize,
+  protectCourseCreate,
+  protectCourseDelete,
+  protectCourseUpdate,
+} from '../middleware/auth';
 import { validate } from '../middleware/validation.middleware';
 import {
   createChapterSchema,
@@ -23,8 +29,7 @@ const chapterController = new ChapterController(chapterService);
 // Protected routes
 router.post(
   '/',
-  authenticate,
-  authorize('teacher', 'super_admin'),
+  ...protectCourseCreate,
   validate(createChapterSchema),
   chapterController.createChapter
 );
@@ -35,23 +40,16 @@ router.get('/:id', chapterController.getChapterById);
 
 router.put(
   '/:id',
-  authenticate,
-  authorize('teacher', 'super_admin'),
+  ...protectCourseUpdate,
   validate(updateChapterSchema),
   chapterController.updateChapter
 );
 
-router.delete(
-  '/:id',
-  authenticate,
-  authorize('teacher', 'super_admin'),
-  chapterController.deleteChapter
-);
+router.delete('/:id', ...protectCourseDelete, chapterController.deleteChapter);
 
 router.patch(
   '/course/:courseId/reorder',
-  authenticate,
-  authorize('teacher', 'super_admin'),
+  ...protectCourseUpdate,
   validate(reorderChaptersSchema),
   chapterController.reorderChapters
 );

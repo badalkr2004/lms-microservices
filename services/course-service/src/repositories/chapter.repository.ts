@@ -46,6 +46,15 @@ export class ChapterRepository {
 
   async reorder(courseId: string, chapterOrders: Array<{ id: string; sortOrder: number }>) {
     await db.transaction(async tx => {
+      // Step 1: move to temporary values
+      for (const { id, sortOrder } of chapterOrders) {
+        await tx
+          .update(courseChapters)
+          .set({ sortOrder: sortOrder + 1000 }) // offset to avoid conflicts
+          .where(and(eq(courseChapters.id, id), eq(courseChapters.courseId, courseId)));
+      }
+
+      // Step 2: update to final values
       for (const { id, sortOrder } of chapterOrders) {
         await tx
           .update(courseChapters)

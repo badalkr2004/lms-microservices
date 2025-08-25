@@ -190,7 +190,7 @@ export class AuthVerificationController {
   ): Promise<boolean> {
     // Define role-based permissions
     const permissions: Record<string, Record<string, string[]>> = {
-      admin: {
+      super_admin: {
         '*': ['*'], // Admin has all permissions
       },
       teacher: {

@@ -15,10 +15,12 @@ const PORT = process.env.API_GATEWAY_PORT || 3000;
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : true,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : true,
+    credentials: true,
+  })
+);
 app.use(compression());
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
@@ -36,7 +38,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Authentication middleware (applies to all API routes)
-app.use('/api/', conditionalAuth);
+// app.use('/api/', conditionalAuth);
 
 // Service configurations
 interface ServiceConfig {
@@ -82,24 +84,27 @@ const services: { [key: string]: ServiceConfig } = {
 // Setup proxy middleware for each service
 Object.entries(services).forEach(([name, config]) => {
   const routePath = name === 'liveSession' ? '/api/live-session' : `/api/${name}`;
-  
-  app.use(routePath, createProxyMiddleware({
-    target: config.target,
-    changeOrigin: true,
-    pathRewrite: config.pathRewrite,
-    timeout: 30000,
-    proxyTimeout: 30000,
-    onError: (err: Error, req: Request, res: Response) => {
-      console.error(`Proxy error for ${name}:`, err.message);
-      res.status(503).json({
-        error: 'Service temporarily unavailable',
-        service: name,
-      });
-    },
-    onProxyReq: (proxyReq:any, req: Request, res: Response) => {
-      console.log(`Proxying ${req.method} ${req.url} to ${config.target}`);
-    },
-  } as Options));
+
+  app.use(
+    routePath,
+    createProxyMiddleware({
+      target: config.target,
+      changeOrigin: true,
+      pathRewrite: config.pathRewrite,
+      timeout: 30000,
+      proxyTimeout: 30000,
+      onError: (err: Error, req: Request, res: Response) => {
+        console.error(`Proxy error for ${name}:`, err.message);
+        res.status(503).json({
+          error: 'Service temporarily unavailable',
+          service: name,
+        });
+      },
+      onProxyReq: (proxyReq: any, req: Request, res: Response) => {
+        console.log(`Proxying ${req.method} ${req.url} to ${config.target}`);
+      },
+    } as Options)
+  );
 });
 
 // Health check endpoint

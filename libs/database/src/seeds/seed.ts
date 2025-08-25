@@ -100,7 +100,7 @@ export async function seedDatabase() {
       .insert(users)
       .values([
         {
-          email: 'adiya@student.com',
+          email: 'aditya@student.com',
           phone: '+91-9876543210',
           passwordHash: adityaPass,
           role: 'student',
