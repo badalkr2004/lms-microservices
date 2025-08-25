@@ -12,7 +12,7 @@ import {
   varchar,
   integer,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import { userRole, authMethod, userStatus } from './enums';
 
 export const users = pgTable(
@@ -116,3 +116,49 @@ export const userInterests = pgTable(
     uniqUserCategory: unique().on(t.userId, t.categoryId),
   })
 );
+
+// follower following table
+export const followers = pgTable(
+  'followers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    followerId: uuid('follower_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    followingId: uuid('following_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+  },
+  (table) => ({
+    // Unique constraint to prevent duplicate follows
+    uniqueFollowerPair: unique().on(table.followerId, table.followingId),
+    
+    // Indexes for performance optimization
+    followerIdIdx: index('idx_followers_follower_id').on(table.followerId),
+    followingIdIdx: index('idx_followers_following_id').on(table.followingId),
+    compositeIdx: index('idx_followers_composite').on(table.followerId, table.followingId),
+    createdAtIdx: index('idx_followers_created_at').on(table.createdAt),
+  })
+);
+
+// Relations
+export const followersRelations = relations(followers, ({ one }) => ({
+  follower: one(users, {
+    fields: [followers.followerId],
+    references: [users.id],
+    relationName: 'follower',
+  }),
+  following: one(users, {
+    fields: [followers.followingId],
+    references: [users.id],
+    relationName: 'following',
+  }),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  following: many(followers, { relationName: 'follower' }),
+  followers: many(followers, { relationName: 'following' }),
+}));
+

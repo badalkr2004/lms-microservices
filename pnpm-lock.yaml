@@ -719,6 +719,9 @@ importers:
       express:
         specifier: ^5.1.0
         version: 5.1.0
+      express-rate-limit:
+        specifier: ^8.0.1
+        version: 8.0.1(express@5.1.0)
       express-validator:
         specifier: ^7.2.1
         version: 7.2.1

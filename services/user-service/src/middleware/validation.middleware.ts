@@ -34,7 +34,9 @@ export const validateRequest = (schema: ZodObject<any>) => {
         success: false,
         message: 'Internal server error during validation',
       });
+    
     }
+    return;
   };
 };
 
