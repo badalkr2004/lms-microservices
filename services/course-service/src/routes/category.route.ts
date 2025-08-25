@@ -42,7 +42,7 @@ router.get('/:parentId/subcategories', categoryController.getSubcategories);
 router.post(
   '/',
   authenticate,
-  authorize('super_admin', 'create'),
+  authorize('*', '*'),
   validate(createCategorySchema),
   categoryController.createCategory
 );
@@ -50,16 +50,11 @@ router.post(
 router.put(
   '/:id',
   authenticate,
-  authorize('super_admin', 'update'),
+  authorize('*', '*'),
   validate(updateCategorySchema),
   categoryController.updateCategory
 );
 
-router.delete(
-  '/:id',
-  authenticate,
-  authorize('super_admin', 'delete'),
-  categoryController.deleteCategory
-);
+router.delete('/:id', authenticate, authorize('*', '*'), categoryController.deleteCategory);
 
 export { router as categoryRoutes };

@@ -4,7 +4,13 @@ import { LectureController } from '../controllers/lecture.controller';
 import { LectureService } from '../services/lecture.service';
 import { LectureRepository } from '../repositories/lecture.repository';
 import { CourseRepository } from '../repositories/course.repository';
-import { authenticate, authorize } from '../middleware/auth';
+import {
+  authenticate,
+  authorize,
+  protectCourseCreate,
+  protectCourseDelete,
+  protectCourseUpdate,
+} from '../middleware/auth';
 import { validate } from '../middleware/validation.middleware';
 import { createLectureSchema, updateLectureSchema } from '../validations/lecture.validation';
 
@@ -25,7 +31,7 @@ router.get('/:id', lectureController.getLectureById);
 router.post(
   '/',
   authenticate,
-  authorize('teacher', 'super_admin'),
+  ...protectCourseCreate,
   validate(createLectureSchema),
   lectureController.createLecture
 );
@@ -33,22 +39,17 @@ router.post(
 router.put(
   '/:id',
   authenticate,
-  authorize('teacher', 'super_admin'),
+  ...protectCourseUpdate,
   validate(updateLectureSchema),
   lectureController.updateLecture
 );
 
-router.delete(
-  '/:id',
-  authenticate,
-  authorize('teacher', 'super_admin'),
-  lectureController.deleteLecture
-);
+router.delete('/:id', authenticate, ...protectCourseDelete, lectureController.deleteLecture);
 
 router.patch(
   '/course/:courseId/reorder',
   authenticate,
-  authorize('teacher', 'super_admin'),
+  ...protectCourseUpdate,
   lectureController.reorderLectures
 );
 

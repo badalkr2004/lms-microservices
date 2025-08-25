@@ -5,7 +5,7 @@ export const createChapterSchema = z.object({
   courseId: z.string().uuid(),
   title: z.string().min(1, 'Title is required').max(255),
   description: z.string().optional(),
-  sortOrder: z.number().int().min(0),
+  sortOrder: z.number().int().min(0).optional(),
 });
 
 export const updateChapterSchema = createChapterSchema.partial().omit({ courseId: true });
