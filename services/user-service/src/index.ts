@@ -50,6 +50,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/auth-verification', authVerificationRoutes);
 // app.use('/api/users', userRoutes);
 
+
+
 // Global error handler
 app.use(errorHandler);
 
