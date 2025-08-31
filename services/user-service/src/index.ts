@@ -7,7 +7,6 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { errorHandler } from '@lms/common';
 import { logger } from '@lms/logger';
-import { db, users } from '@lms/database';
 import { initFirebase } from './config/firebase';
 import { authRoutes } from './routes/auth.routes';
 import { authVerificationRoutes } from './routes/auth-verification.routes';

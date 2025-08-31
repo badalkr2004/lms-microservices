@@ -67,7 +67,7 @@ export class NotFollowingError extends Error {
 
 // Request context type (assuming you have auth middleware)
 export interface AuthenticatedRequest extends Request{
-  user: {
+  user?: {
     id: string;
     email: string;
     role: 'student' | 'teacher';

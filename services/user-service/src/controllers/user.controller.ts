@@ -14,7 +14,7 @@ import {
 import { z } from 'zod';
 
 export class UserController {
-  private userRepository: UserRepository;
+  public userRepository: UserRepository;
 
   constructor() {
     this.userRepository = new UserRepository();
@@ -32,11 +32,11 @@ export class UserController {
   ): Promise<void> => {
     try {
       // Only students can access profile endpoint
-      if (req.user.role !== 'student') {
+      if (req.user?.role !== 'student') {
         throw new UnauthorizedError('Only students can access profile information');
       }
 
-      const profile = await this.userRepository.getUserProfile(req.user.id);
+      const profile = await this.userRepository.getUserProfile(req.user?.id);
       
       if (!profile) {
         throw new UserNotFoundError();
@@ -68,7 +68,7 @@ export class UserController {
       const { teacherId } = FollowRequestSchema.parse(req.body);
       
       // Security check: Only students can follow
-      if (req.user.role !== 'student') {
+      if (req.user?.role !== 'student') {
         throw new InvalidRoleError('Only students can follow teachers');
       }
 
@@ -120,18 +120,18 @@ export class UserController {
       const { teacherId } = FollowRequestSchema.parse(req.body);
       
       // Security check: Only students can unfollow
-      if (req.user.role !== 'student') {
+      if (req.user?.role !== 'student') {
         throw new InvalidRoleError('Only students can unfollow teachers');
       }
 
       // Prevent self-unfollowing
-      if (req.user.id === teacherId) {
+      if (req.user?.id === teacherId) {
         throw new InvalidRoleError('Cannot unfollow yourself');
       }
 
       // Check if currently following
       const isFollowing = await this.userRepository.isFollowing(
-        req.user.id,
+        req.user?.id,
         teacherId
       );
 
@@ -141,7 +141,7 @@ export class UserController {
 
       // Perform unfollow operation
       const unfollowed = await this.userRepository.unfollowTeacher(
-        req.user.id,
+        req.user?.id,
         teacherId
       );
 
@@ -150,7 +150,7 @@ export class UserController {
       }
 
       // Get updated profile to return new following count
-      const updatedProfile = await this.userRepository.getUserProfile(req.user.id);
+      const updatedProfile = await this.userRepository.getUserProfile(req.user?.id);
 
       res.status(200).json({
         success: true,

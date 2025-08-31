@@ -28,16 +28,17 @@ const followRateLimit = rateLimitMiddleware({
  * Profile route
  */
 // GET /api/users/profile - Get student profile (name, email, avatar, following count)
-router.get('/profile', authMiddleware(req) userController.getProfile);
+router.get('/profile', authMiddleware, userController.getProfile.bind(userController));
 
 /**
  * Follow/Unfollow routes with rate limiting
  */
 // POST /api/users/follow - Follow a teacher
-router.post('/follow', followRateLimit, userController.followTeacher);
+// router.post('/follow', followRateLimit, userController.followTeacher.bind(userController));
+
 
 // DELETE /api/users/unfollow - Unfollow a teacher
-router.delete('/unfollow', followRateLimit, userController.unfollowTeacher);
+// router.delete('/unfollow', followRateLimit, userController.unfollowTeacher.bind(userController));
 
 /**
  * Error handling middleware (must be last)
