@@ -1,11 +1,14 @@
 // src/routes/index.ts
 import { Router } from 'express';
 import fileRoutes from './file.routes'
+import videoRoutes from './video.routes';
 
 const router:Router = Router();
 
 // Mount file routes
 router.use('/files', fileRoutes);
+// Mount video routes
+router.use('/videos', videoRoutes);
 
 // Root endpoint
 router.get('/', (req, res) => {

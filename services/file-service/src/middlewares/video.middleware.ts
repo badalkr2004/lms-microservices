@@ -2,10 +2,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/errors';
 import { WebhookUtils } from '../utils/webhook.utils';
-import { createLogger } from '../utils/logger';
-import { config } from '../config';
+import { logger } from '@lms/logger'
+import { muxConfig } from '../config';
 
-const logger = createLogger('VideoMiddleware');
+// const logger = createLogger('VideoMiddleware');
 
 /**
  * Middleware to verify Mux webhook signatures
@@ -22,7 +22,7 @@ export const verifyMuxWebhook = (req: Request, res: Response, next: NextFunction
     const isValid = WebhookUtils.verifyMuxSignature(
       payload,
       signature,
-      config.MUX_WEBHOOK_SECRET
+      muxConfig.MUX_WEBHOOK_SECRET
     );
 
     if (!isValid) {
@@ -60,15 +60,15 @@ export const validateVideoFile = (req: Request, res: Response, next: NextFunctio
     }
 
     // Check file size
-    if (fileSize > config.MAX_VIDEO_SIZE) {
+    if (fileSize > muxConfig.MAX_VIDEO_SIZE) {
       throw new AppError(
-        `File size exceeds maximum limit of ${Math.floor(config.MAX_VIDEO_SIZE / (1024 * 1024 * 1024))}GB`,
+        `File size exceeds maximum limit of ${Math.floor(muxConfig.MAX_VIDEO_SIZE / (1024 * 1024 * 1024))}GB`,
         400
       );
     }
 
     // Check content type
-    if (!config.SUPPORTED_VIDEO_FORMATS.includes(contentType.toLowerCase())) {
+    if (!muxConfig.SUPPORTED_VIDEO_FORMATS.includes(contentType.toLowerCase())) {
       throw new AppError(`Unsupported video format: ${contentType}`, 400);
     }
 
@@ -107,34 +107,21 @@ export const checkVideoPermissions = (req: Request, res: Response, next: NextFun
 };
 
 // src/middlewares/validation.middleware.ts
-import { Request, Response, NextFunction } from 'express';
-import { Schema } from 'joi';
-import { AppError } from '../utils/errors';
+// import { Request, Response, NextFunction } from 'express';
+// import { Schema } from 'joi';
+// import { AppError } from '../utils/errors';
 
-export const validateRequest = (schema: Schema, property: 'body' | 'query' | 'params' = 'body') => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const { error, value } = schema.validate(req[property]);
+// export const validateRequest = (schema: Schema, property: 'body' | 'query' | 'params' = 'body') => {
+//   return (req: Request, res: Response, next: NextFunction) => {
+//     const { error, value } = schema.validate(req[property]);
     
-    if (error) {
-      const errorMessage = error.details.map(detail => detail.message).join(', ');
-      return next(new AppError(errorMessage, 400));
-    }
+//     if (error) {
+//       const errorMessage = error.details.map(detail => detail.message).join(', ');
+//       return next(new AppError(errorMessage, 400));
+//     }
     
-    req[property] = value;
-    next();
-  };
-};
+//     req[property] = value;
+//     next();
+//   };
+// };
 
-// src/routes/index.ts - Update to include video routes
-import { Router } from 'express';
-import videoRoutes from './video.routes';
-// ... your other route imports
-
-const router = Router();
-
-// Mount video routes
-router.use('/videos', videoRoutes);
-
-// ... your other routes
-
-export default router;

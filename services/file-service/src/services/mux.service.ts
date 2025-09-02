@@ -1,7 +1,7 @@
 // src/services/mux.service.ts
 import Mux from '@mux/mux-node';
-import { config } from '../config';
-import { createLogger } from '../utils/logger';
+import { muxConfig } from '../config';
+import { logger } from '@lms/logger';
 import { AppError } from '../utils/errors';
 import { 
   MuxUploadResponse, 
@@ -10,19 +10,18 @@ import {
   MuxWebhookPayload 
 } from '../types/mux.types';
 
-const logger = createLogger('MuxService');
 
 class MuxService {
   private mux: Mux;
 
   constructor() {
-    if (!config.MUX_TOKEN_ID || !config.MUX_TOKEN_SECRET) {
+    if (!muxConfig.MUX_TOKEN_ID || !muxConfig.MUX_TOKEN_SECRET) {
       throw new AppError('Mux credentials not configured', 500);
     }
 
     this.mux = new Mux({
-      tokenId: config.MUX_TOKEN_ID,
-      tokenSecret: config.MUX_TOKEN_SECRET,
+      tokenId: muxConfig.MUX_TOKEN_ID,
+      tokenSecret: muxConfig.MUX_TOKEN_SECRET,
     });
   }
 
@@ -52,7 +51,7 @@ class MuxService {
           }),
         },
         timeout: 3600, // 1 hour timeout
-        cors_origin: config.CORS_ORIGIN,
+        cors_origin: muxConfig.CORS_ORIGIN,
       });
 
       logger.info('Mux direct upload created successfully', { 
@@ -68,16 +67,16 @@ class MuxService {
       };
     } catch (error) {
       logger.error('Failed to create Mux direct upload', { 
-        error: error.message,
+        error: (error as Error).message,
         metadata 
       });
       
-      if (error.response?.status === 401) {
+      if ((error as { response?: { status: number } }).response?.status === 401) {
         throw new AppError('Mux authentication failed', 401);
       }
       
       throw new AppError(
-        `Failed to create video upload: ${error.message}`, 
+        `Failed to create video upload: ${(error as Error).message}`, 
         500
       );
     }
@@ -112,15 +111,15 @@ class MuxService {
     } catch (error) {
       logger.error('Failed to retrieve Mux asset', { 
         assetId, 
-        error: error.message 
+        error: (error as Error).message 
       });
 
-      if (error.response?.status === 404) {
+      if ((error as { response?: { status: number } }).response?.status === 404) {
         throw new AppError('Video asset not found', 404);
       }
 
       throw new AppError(
-        `Failed to retrieve video asset: ${error.message}`, 
+        `Failed to retrieve video asset: ${(error as Error).message}`, 
         500
       );
     }
@@ -134,7 +133,7 @@ class MuxService {
       const asset = await this.getAsset(assetId);
       
       const publicPlaybackId = asset.playbackIds.find(
-        pb => pb.policy === 'public'
+        (pb: { id: string; policy: string }) => pb.policy === 'public'
       );
 
       if (!publicPlaybackId) {
@@ -145,7 +144,7 @@ class MuxService {
     } catch (error) {
       logger.error('Failed to get playback URL', { 
         assetId, 
-        error: error.message 
+        error: (error as Error).message
       });
       throw error;
     }
@@ -162,20 +161,20 @@ class MuxService {
       const asset = await this.getAsset(assetId);
       
       const signedPlaybackId = asset.playbackIds.find(
-        pb => pb.policy === 'signed'
+        (pb: { id: string; policy: string }) => pb.policy === 'signed'
       );
 
       if (!signedPlaybackId) {
         throw new AppError('No signed playback ID found for asset', 404);
       }
 
-      if (!config.MUX_SIGNING_KEY_ID || !config.MUX_SIGNING_KEY_PRIVATE) {
+      if (!muxConfig.MUX_SIGNING_KEY_ID || !muxConfig.MUX_SIGNING_KEY_PRIVATE) {
         throw new AppError('Mux signing keys not configured', 500);
       }
 
       const token = await this.mux.jwt.signPlaybackId(signedPlaybackId.id, {
-        keyId: config.MUX_SIGNING_KEY_ID,
-        keySecret: config.MUX_SIGNING_KEY_PRIVATE,
+        keyId: muxConfig.MUX_SIGNING_KEY_ID,
+        keySecret: muxConfig.MUX_SIGNING_KEY_PRIVATE,
         expiration: `${expirationTime}s`,
       });
 
@@ -183,7 +182,7 @@ class MuxService {
     } catch (error) {
       logger.error('Failed to generate signed playback URL', { 
         assetId, 
-        error: error.message 
+        error: (error as Error).message 
       });
       throw error;
     }
@@ -197,7 +196,7 @@ class MuxService {
       const asset = await this.getAsset(assetId);
       
       const publicPlaybackId = asset.playbackIds.find(
-        pb => pb.policy === 'public'
+        (pb: { id: string; policy: string }) => pb.policy === 'public'
       );
 
       if (!publicPlaybackId) {
@@ -209,7 +208,7 @@ class MuxService {
     } catch (error) {
       logger.error('Failed to create thumbnail URL', { 
         assetId, 
-        error: error.message 
+        error: (error as Error).message 
       });
       throw error;
     }
@@ -228,16 +227,16 @@ class MuxService {
     } catch (error) {
       logger.error('Failed to delete Mux asset', { 
         assetId, 
-        error: error.message 
+        error: (error as Error).message 
       });
 
-      if (error.response?.status === 404) {
+      if ((error as { response?: { status: number } }).response?.status === 404) {
         logger.warn('Asset not found during deletion', { assetId });
         return; // Asset already deleted or doesn't exist
       }
 
       throw new AppError(
-        `Failed to delete video asset: ${error.message}`, 
+        `Failed to delete video asset: ${(error as Error).message}`, 
         500
       );
     }
@@ -278,7 +277,7 @@ class MuxService {
       }
     } catch (error) {
       logger.error('Failed to process Mux webhook', { 
-        error: error.message,
+        error: (error as Error).message,
         payload 
       });
       throw error;
@@ -355,7 +354,7 @@ class MuxService {
     } catch (error) {
       logger.error('Failed to retrieve video analytics', { 
         assetId, 
-        error: error.message 
+        error: (error as Error).message 
       });
       throw error;
     }
@@ -392,11 +391,11 @@ class MuxService {
       };
     } catch (error) {
       logger.error('Failed to create live stream', { 
-        error: error.message,
+        error: (error as Error).message,
         metadata 
       });
       throw new AppError(
-        `Failed to create live stream: ${error.message}`, 
+        `Failed to create live stream: ${(error as Error).message}`, 
         500
       );
     }
@@ -411,7 +410,7 @@ class MuxService {
       await this.mux.video.assets.list({ limit: 1 });
       return true;
     } catch (error) {
-      logger.error('Mux health check failed', { error: error.message });
+      logger.error('Mux health check failed', { error: (error as Error).message });
       return false;
     }
   }
