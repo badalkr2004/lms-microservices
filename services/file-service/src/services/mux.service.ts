@@ -91,9 +91,9 @@ class MuxService {
         id: asset.id,
         status: asset.status,
         duration: asset.duration,
-        maxStoredResolution: asset.max_stored_resolution,
-        maxStoredFrameRate: asset.max_stored_frame_rate,
-        aspectRatio: asset.aspect_ratio,
+        maxStoredResolution: asset.max_stored_resolution as string,
+        maxStoredFrameRate: asset.max_stored_frame_rate as number,
+        aspectRatio: asset.aspect_ratio as string,
         playbackIds:
           asset.playback_ids?.map((pb: { id: string; policy: string }) => ({
             id: pb.id,

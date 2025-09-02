@@ -18,9 +18,9 @@ export interface MuxAssetResponse {
   id: string;
   status: string;
   duration?: number;
-  maxStoredResolution?: string;
-  maxStoredFrameRate?: number;
-  aspectRatio?: string;
+  maxStoredResolution: string;
+  maxStoredFrameRate: number;
+  aspectRatio: string;
   playbackIds: Array<{
     id: string;
     policy: string;

@@ -4,17 +4,20 @@ import { files, fileUploadSessions, courseLectures } from '@lms/database';
 import { muxService } from './mux.service';
 import { logger } from '@lms/logger';
 import { AppError } from '../utils/errors';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql, desc, asc } from 'drizzle-orm';
 import {
   VideoUploadRequest,
   VideoUploadResponse,
   VideoProcessingStatus,
   VideoMetadata,
+  VideoListResponse,
+  VideoFilterOptions,
+  VideoBatchOperation,
+  VideoAnalytics,
+  VideoTranscription,
 } from '../types/video.types';
 import { isValidVideoType } from '@/utils/validation.utils';
 import { generateUniqueFilename } from '@/utils/file.utils';
-
-// const logger = createLogger('VideoService');
 
 export class VideoService {
   /**
@@ -263,7 +266,7 @@ export class VideoService {
       });
     } catch (error) {
       logger.error('Failed to handle upload asset created', {
-        error: error.message,
+        error: (error as Error).message,
         fileId,
         uploadId,
         assetId,
@@ -304,9 +307,37 @@ export class VideoService {
       logger.error('Failed to mark video as failed', {
         fileId,
         originalError: errorMessage,
-        updateError: error.message,
+        updateError: (error as Error).message,
       });
     }
+  }
+
+  /**
+   * Calculate processing progress based on status and metadata
+   */
+  private calculateProcessingProgress(status: string, metadata: any): number {
+    const progressMap: Record<string, number> = {
+      'pending': 0,
+      'uploading': 10,
+      'uploaded': 25,
+      'processing': 50,
+      'transcoding': 75,
+      'completed': 100,
+      'failed': 0,
+      'cancelled': 0,
+    };
+
+    let baseProgress = progressMap[status] || 0;
+
+    // Add granular progress based on metadata
+    if (status === 'processing' && metadata) {
+      if (metadata.assetCreated) baseProgress = 60;
+      if (metadata.thumbnailGenerated) baseProgress = 70;
+      if (metadata.playbackIdsCreated) baseProgress = 80;
+      if (metadata.transcriptGenerated) baseProgress = 90;
+    }
+
+    return baseProgress;
   }
 
   /**
@@ -331,7 +362,7 @@ export class VideoService {
           const asset = await muxService.getAsset(metadata.muxAssetId);
 
           // Update status if it changed in Mux
-          if (asset.status === 'ready' && fileRecord.status !== 'completed') {
+          if (asset.status === 'ready') {
             await this.handleAssetReady(
               {
                 type: 'video.asset.ready',
@@ -366,7 +397,7 @@ export class VideoService {
       logger.error('Failed to get video status', {
         fileId,
         userId,
-        error: error.message,
+        error: (error as Error).message,
       });
       throw error;
     }
@@ -404,7 +435,7 @@ export class VideoService {
       logger.error('Failed to get video metadata', {
         fileId,
         userId,
-        error: error.message,
+        error: (error as Error).message,
       });
       throw error;
     }
@@ -427,7 +458,7 @@ export class VideoService {
       logger.error('Failed to generate signed playback URL', {
         fileId,
         userId,
-        error: error.message,
+        error: (error as Error).message,
       });
       throw error;
     }
@@ -459,7 +490,7 @@ export class VideoService {
         } catch (error) {
           logger.warn('Failed to delete Mux asset (continuing with DB cleanup)', {
             assetId: metadata.muxAssetId,
-            error: error.message,
+            error: (error as Error).message,
           });
         }
       }
@@ -475,7 +506,7 @@ export class VideoService {
             videoUrl: null,
             videoMuxAssetId: null,
             videoDuration: null,
-            updatedAt: new Date(),
+            updatedAt: new Date().toISOString(),
           })
           .where(eq(courseLectures.id, metadata.lectureId));
       }
@@ -485,81 +516,487 @@ export class VideoService {
       logger.error('Failed to delete video', {
         fileId,
         userId,
-        error: error.message,
+        error: (error as Error).message,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * List user's videos with pagination and filtering
+   */
+  async listUserVideos(
+    userId: string,
+    options: VideoFilterOptions = {}
+  ): Promise<VideoListResponse> {
+    try {
+      const { 
+        page = 1, 
+        limit = 20, 
+        status, 
+        courseId, 
+        sortBy = 'uploadedAt',
+        sortOrder = 'desc',
+        search 
+      } = options;
+      const offset = (page - 1) * limit;
+
+      // Build base query
+      let query = db
+        .select()
+        .from(files)
+        .where(and(
+          eq(files.userId, userId),
+          eq(files.category, 'video')
+        ));
+
+      // Add status filter
+      if (status) {
+        query = query.where(eq(files.status, status));
+      }
+
+      // Add search filter
+      if (search) {
+        query = query.where(sql`${files.originalName} ILIKE ${`%${search}%`}`);
+      }
+
+      // Add sorting
+      const sortColumn = sortBy === 'uploadedAt' ? files.uploadedAt : files.originalName;
+      const orderFn = sortOrder === 'desc' ? desc : asc;
+      query = query.orderBy(orderFn(sortColumn));
+
+      // Execute query with pagination
+      const results = await query.limit(limit).offset(offset);
+
+      // Get total count
+      let countQuery = db
+        .select({ count: sql<number>`count(*)` })
+        .from(files)
+        .where(and(
+          eq(files.userId, userId),
+          eq(files.category, 'video')
+        ));
+
+      if (status) {
+        countQuery = countQuery.where(eq(files.status, status));
+      }
+
+      if (search) {
+        countQuery = countQuery.where(sql`${files.originalName} ILIKE ${`%${search}%`}`);
+      }
+
+      const [{ count }] = await countQuery;
+
+      // Filter by courseId if provided (requires metadata parsing)
+      let filteredResults = results;
+      if (courseId) {
+        filteredResults = results.filter(file => {
+          try {
+            const metadata = file.metadata ? JSON.parse(file.metadata) : {};
+            return metadata.courseId === courseId;
+          } catch {
+            return false;
+          }
+        });
+      }
+
+      // Convert to video status objects
+      const videos = await Promise.all(
+        filteredResults.map(async (file) => {
+          try {
+            return await this.getVideoStatus(file.id, userId);
+          } catch (error) {
+            logger.warn('Failed to get status for video', {
+              fileId: file.id,
+              error: (error as Error).message
+            });
+
+            // Return basic status for failed videos
+            const metadata = file.metadata ? JSON.parse(file.metadata) : {};
+            return {
+              fileId: file.id,
+              status: file.status as any,
+              fileName: file.originalName,
+              fileSize: file.fileSize,
+              uploadedAt: file.uploadedAt,
+              videoUrl: null,
+              thumbnailUrl: null,
+              duration: null,
+              muxAssetId: null,
+              processingProgress: this.calculateProcessingProgress(file.status, metadata),
+              error: metadata.error || 'Failed to retrieve video status',
+            };
+          }
+        })
+      );
+
+      return {
+        videos,
+        pagination: {
+          page,
+          limit,
+          total: courseId ? filteredResults.length : count,
+          totalPages: Math.ceil((courseId ? filteredResults.length : count) / limit),
+        },
+      };
+    } catch (error) {
+      logger.error('Failed to list user videos', {
+        userId,
+        options,
+        error: (error as Error).message,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Batch operations on videos
+   */
+  async batchOperation(
+    fileIds: string[],
+    operation: VideoBatchOperation,
+    userId: string
+  ): Promise<{ successful: string[]; failed: { fileId: string; error: string }[] }> {
+    const successful: string[] = [];
+    const failed: { fileId: string; error: string }[] = [];
+
+    for (const fileId of fileIds) {
+      try {
+        switch (operation) {
+          case 'delete':
+            await this.deleteVideo(fileId, userId);
+            break;
+          case 'regenerate_thumbnail':
+            await this.regenerateThumbnail(fileId, userId);
+            break;
+          case 'retry_processing':
+            await this.retryProcessing(fileId, userId);
+            break;
+          default:
+            throw new Error(`Unsupported operation: ${operation}`);
+        }
+        successful.push(fileId);
+      } catch (error) {
+        failed.push({
+          fileId,
+          error: (error as Error).message,
+        });
+      }
+    }
+
+    logger.info('Batch operation completed', {
+      operation,
+      successful: successful.length,
+      failed: failed.length,
+      userId,
+    });
+
+    return { successful, failed };
+  }
+
+  /**
+   * Regenerate thumbnail for a video
+   */
+  async regenerateThumbnail(fileId: string, userId: string): Promise<string> {
+    try {
+      const [fileRecord] = await db
+        .select()
+        .from(files)
+        .where(and(eq(files.id, fileId), eq(files.userId, userId)));
+
+      if (!fileRecord) {
+        throw new AppError('Video not found', 404);
+      }
+
+      const metadata = fileRecord.metadata ? JSON.parse(fileRecord.metadata) : {};
+
+      if (!metadata.muxAssetId) {
+        throw new AppError('No Mux asset ID found', 400);
+      }
+
+      // Generate new thumbnail
+      const thumbnailUrl = await muxService.createThumbnail(metadata.muxAssetId, {
+        time: Math.random() * (metadata.duration || 10), // Random time for variety
+      });
+
+      // Update metadata
+      const updatedMetadata = {
+        ...metadata,
+        thumbnailUrl,
+        thumbnailRegeneratedAt: new Date().toISOString(),
+      };
+
+      await db
+        .update(files)
+        .set({
+          metadata: JSON.stringify(updatedMetadata),
+          updatedAt: new Date(),
+        })
+        .where(eq(files.id, fileId));
+
+      logger.info('Thumbnail regenerated', { fileId, thumbnailUrl });
+
+      return thumbnailUrl;
+    } catch (error) {
+      logger.error('Failed to regenerate thumbnail', {
+        fileId,
+        userId,
+        error: (error as Error).message,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Retry processing for a failed video
+   */
+  async retryProcessing(fileId: string, userId: string): Promise<void> {
+    try {
+      const [fileRecord] = await db
+        .select()
+        .from(files)
+        .where(and(eq(files.id, fileId), eq(files.userId, userId)));
+
+      if (!fileRecord) {
+        throw new AppError('Video not found', 404);
+      }
+
+      if (fileRecord.status !== 'failed') {
+        throw new AppError('Video is not in failed state', 400);
+      }
+
+      const metadata = fileRecord.metadata ? JSON.parse(fileRecord.metadata) : {};
+
+      // Reset status and clear error
+      const updatedMetadata = {
+        ...metadata,
+        error: null,
+        failedAt: null,
+        retryAttemptedAt: new Date().toISOString(),
+      };
+
+      await db
+        .update(files)
+        .set({
+          status: 'processing',
+          metadata: JSON.stringify(updatedMetadata),
+          updatedAt: new Date(),
+        })
+        .where(eq(files.id, fileId));
+
+      // If we have a Mux asset ID, check its status
+      if (metadata.muxAssetId) {
+        try {
+          const asset = await muxService.getAsset(metadata.muxAssetId);
+          
+          if (asset.status === 'ready') {
+            // Asset is actually ready, trigger the ready handler
+            await this.handleAssetReady(
+              {
+                type: 'video.asset.ready',
+                data: { id: metadata.muxAssetId },
+              },
+              metadata
+            );
+          }
+        } catch (error) {
+          logger.warn('Asset not found in Mux during retry', {
+            fileId,
+            assetId: metadata.muxAssetId,
+          });
+          
+          // Asset doesn't exist, mark as failed again
+          await this.markVideoAsFailed(fileId, 'Asset not found in Mux');
+        }
+      } else {
+        // No asset ID, mark as failed
+        await this.markVideoAsFailed(fileId, 'No Mux asset ID available for retry');
+      }
+
+      logger.info('Processing retry initiated', { fileId });
+    } catch (error) {
+      logger.error('Failed to retry processing', {
+        fileId,
+        userId,
+        error: (error as Error).message,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get video analytics
+   */
+  async getVideoAnalytics(fileId: string, userId: string): Promise<VideoAnalytics> {
+    try {
+      const [fileRecord] = await db
+        .select()
+        .from(files)
+        .where(and(eq(files.id, fileId), eq(files.userId, userId)));
+
+      if (!fileRecord) {
+        throw new AppError('Video not found', 404);
+      }
+
+      const metadata = fileRecord.metadata ? JSON.parse(fileRecord.metadata) : {};
+
+      if (!metadata.muxAssetId) {
+        throw new AppError('No Mux asset ID found', 400);
+      }
+
+      // Get analytics from Mux (if available)
+      let muxAnalytics = null;
+      try {
+        muxAnalytics = await muxService.getAssetMetrics(metadata.muxAssetId);
+      } catch (error) {
+        logger.warn('Failed to get Mux analytics', {
+          fileId,
+          error: (error as Error).message,
+        });
+      }
+
+      return {
+        fileId,
+        views: muxAnalytics?.views || 0,
+        totalWatchTime: muxAnalytics?.totalWatchTime || 0,
+        averageWatchTime: muxAnalytics?.averageWatchTime || 0,
+        completionRate: muxAnalytics?.completionRate || 0,
+        engagement: muxAnalytics?.engagement || {},
+        createdAt: fileRecord.uploadedAt,
+        lastViewed: muxAnalytics?.lastViewed || null,
+      };
+    } catch (error) {
+      logger.error('Failed to get video analytics', {
+        fileId,
+        userId,
+        error: (error as Error).message,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get video transcription
+   */
+  async getVideoTranscription(fileId: string, userId: string): Promise<VideoTranscription> {
+    try {
+      const [fileRecord] = await db
+        .select()
+        .from(files)
+        .where(and(eq(files.id, fileId), eq(files.userId, userId)));
+
+      if (!fileRecord) {
+        throw new AppError('Video not found', 404);
+      }
+
+      const metadata = fileRecord.metadata ? JSON.parse(fileRecord.metadata) : {};
+
+      if (!metadata.muxAssetId) {
+        throw new AppError('No Mux asset ID found', 400);
+      }
+
+      // Check if transcription already exists in metadata
+      if (metadata.transcription) {
+        return {
+          fileId,
+          transcription: metadata.transcription,
+          language: metadata.transcriptionLanguage || 'en',
+          confidence: metadata.transcriptionConfidence || 0,
+          generatedAt: metadata.transcriptionGeneratedAt,
+        };
+      }
+
+      // Generate transcription using Mux or external service
+      const transcriptionResult = await muxService.generateTranscription(metadata.muxAssetId);
+
+      // Update metadata with transcription
+      const updatedMetadata = {
+        ...metadata,
+        transcription: transcriptionResult.text,
+        transcriptionLanguage: transcriptionResult.language,
+        transcriptionConfidence: transcriptionResult.confidence,
+        transcriptionGeneratedAt: new Date().toISOString(),
+      };
+
+      await db
+        .update(files)
+        .set({
+          metadata: JSON.stringify(updatedMetadata),
+          updatedAt: new Date(),
+        })
+        .where(eq(files.id, fileId));
+
+      return {
+        fileId,
+        transcription: transcriptionResult.text,
+        language: transcriptionResult.language,
+        confidence: transcriptionResult.confidence,
+        generatedAt: updatedMetadata.transcriptionGeneratedAt,
+      };
+    } catch (error) {
+      logger.error('Failed to get video transcription', {
+        fileId,
+        userId,
+        error: (error as Error).message,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Update video metadata (title, description, etc.)
+   */
+  async updateVideoMetadata(
+    fileId: string,
+    userId: string,
+    updates: {
+      title?: string;
+      description?: string;
+      tags?: string[];
+      category?: string;
+    }
+  ): Promise<void> {
+    try {
+      const [fileRecord] = await db
+        .select()
+        .from(files)
+        .where(and(eq(files.id, fileId), eq(files.userId, userId)));
+
+      if (!fileRecord) {
+        throw new AppError('Video not found', 404);
+      }
+
+      const metadata = fileRecord.metadata ? JSON.parse(fileRecord.metadata) : {};
+      const updatedMetadata = {
+        ...metadata,
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Update the original name if title is provided
+      const updateData: any = {
+        metadata: JSON.stringify(updatedMetadata),
+        updatedAt: new Date(),
+      };
+
+      if (updates.title) {
+        updateData.originalName = updates.title;
+      }
+
+      await db
+        .update(files)
+        .set(updateData)
+        .where(eq(files.id, fileId));
+
+      logger.info('Video metadata updated', { fileId, updates });
+    } catch (error) {
+      logger.error('Failed to update video metadata', {
+        fileId,
+        userId,
+        updates,
+        error: (error as Error).message,
       });
       throw error;
     }
   }
 }
-
-/**
- * List user's videos with pagination
- */
-//   async listUserVideos(
-//     userId: string,
-//     options: {
-//       page?: number;
-//       limit?: number;
-//       status?: string;
-//       courseId?: string;
-//     } = {}
-//   ): Promise<{
-//     videos: VideoProcessingStatus[];
-//     pagination: {
-//       page: number;
-//       limit: number;
-//       total: number;
-//       totalPages: number;
-//     };
-//   }> {
-//     try {
-//       const { page = 1, limit = 20, status, courseId } = options;
-//       const offset = (page - 1) * limit;
-
-//       let query = db.select()
-//         .from(files)
-//         .where(and(
-//           eq(files.userId, userId),
-//           eq(files.category, 'video'),
-//           eq(files.isActive, true)
-//         ));
-
-//       // Add filters
-//       if (status) {
-//         query = query.where(eq(files.status, status));
-//       }
-
-//       // For course filter, we'd need to parse metadata
-//       // This is a simplified version
-//       const results = await query
-//         .limit(limit)
-//         .offset(offset)
-//         .orderBy(files.uploadedAt);
-
-//       // Get total count
-//       const [{ count }] = await db.select({
-//         count: sql<number>`count(*)`
-//       }).from(files)
-//         .where(and(
-//           eq(files.userId, userId),
-//           eq(files.category, 'video'),
-//           eq(files.isActive, true)
-//         ));
-
-//       const videos = await Promise.all(
-//         results.map(async (file) => {
-//           try {
-//             return await this.getVideoStatus(file.id, userId);
-//           } catch (error) {
-//             logger.warn('Failed to get status for video', {
-//               fileId: file.id,
-//               error: error.message
-//             });
-
-//             return {
-//               fileId: file.id,
-//               status: file.status as any,
-//               fileName: file.originalName,
-//               fileSize: file.fileSize,
-//               uploadedAt: file.uploadedAt,
-//               videoUrl: null,
