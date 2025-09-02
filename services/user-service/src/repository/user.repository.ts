@@ -16,7 +16,7 @@ export class UserRepository {
    * Get student profile with basic info and following count
    * Returns: name, email, avatar url, number of teachers following
    */
-  async getUserProfile(userId: string): Promise<UserProfile | null> {
+  async getUserProfile(userId: string): Promise<any | null> {
     try {
       const result = await db
         .select({
@@ -25,27 +25,20 @@ export class UserRepository {
           displayName: userProfiles.displayName,
           email: users.email,
           avatarUrl: userProfiles.avatarUrl,
-          followingCount: sql<number>`COALESCE(COUNT(${followers.id}), 0)`,
+          followingCount: sql<number>`CAST((
+          SELECT COALESCE(COUNT(*), 0) 
+          FROM ${followers} 
+          WHERE ${followers.followerId} = ${userProfiles.userId}
+      ) AS INTEGER)`,
+          followersCount: sql<number>`CAST((
+          SELECT COALESCE(COUNT(*), 0) 
+          FROM ${followers} 
+          WHERE ${followers.followingId} = ${userProfiles.userId}
+        ) AS INTEGER)`,
         })
         .from(userProfiles)
         .innerJoin(users, eq(userProfiles.userId, users.id))
-        .leftJoin(
-          followers,
-          eq(userProfiles.userId, followers.followerId)
-        )
-        .where(
-          and(
-            eq(userProfiles.userId, userId),
-            eq(users.role, 'student')
-          )
-        )
-        .groupBy(
-          userProfiles.firstName,
-          userProfiles.lastName,
-          userProfiles.displayName,
-          users.email,
-          userProfiles.avatarUrl
-        )
+        .where(and(eq(userProfiles.userId, userId)))
         .limit(1);
 
       return result[0] || null;
@@ -63,12 +56,7 @@ export class UserRepository {
       const result = await db
         .select({ id: followers.id })
         .from(followers)
-        .where(
-          and(
-            eq(followers.followerId, studentId),
-            eq(followers.followingId, teacherId)
-          )
-        )
+        .where(and(eq(followers.followerId, studentId), eq(followers.followingId, teacherId)))
         .limit(1);
 
       return result.length > 0;
@@ -89,12 +77,12 @@ export class UserRepository {
       });
     } catch (error) {
       console.error('Error following teacher:', error);
-      
+
       // Handle unique constraint violation
       if (error instanceof Error && error.message.includes('unique')) {
         throw new Error('Already following this teacher');
       }
-      
+
       throw new Error('Failed to follow teacher');
     }
   }
@@ -106,12 +94,7 @@ export class UserRepository {
     try {
       const result = await db
         .delete(followers)
-        .where(
-          and(
-            eq(followers.followerId, studentId),
-            eq(followers.followingId, teacherId)
-          )
-        )
+        .where(and(eq(followers.followerId, studentId), eq(followers.followingId, teacherId)))
         .returning({ id: followers.id });
 
       return result.length > 0;
@@ -147,7 +130,10 @@ export class UserRepository {
   /**
    * Validate that student can follow teacher
    */
-  async validateFollowOperation(studentId: string, teacherId: string): Promise<{
+  async validateFollowOperation(
+    studentId: string,
+    teacherId: string
+  ): Promise<{
     student: any;
     teacher: any;
   }> {

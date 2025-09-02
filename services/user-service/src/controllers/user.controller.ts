@@ -31,12 +31,8 @@ export class UserController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      // Only students can access profile endpoint
-      if (req.user?.role !== 'student') {
-        throw new UnauthorizedError('Only students can access profile information');
-      }
 
-      const profile = await this.userRepository.getUserProfile(req.user?.id);
+      const profile = await this.userRepository.getUserProfile(req.user?.userId as string);
       
       if (!profile) {
         throw new UserNotFoundError();
@@ -73,16 +69,16 @@ export class UserController {
       }
 
       // Prevent self-following
-      if (req.user.id === teacherId) {
+      if (req.user.userId === teacherId) {
         throw new InvalidRoleError('Cannot follow yourself');
       }
 
       // Validate the follow operation
-      await this.userRepository.validateFollowOperation(req.user.id, teacherId);
+      await this.userRepository.validateFollowOperation(req.user.userId, teacherId);
 
       // Check if already following
       const isAlreadyFollowing = await this.userRepository.isFollowing(
-        req.user.id,
+        req.user.userId,
         teacherId
       );
 
@@ -91,10 +87,10 @@ export class UserController {
       }
 
       // Perform follow operation
-      await this.userRepository.followTeacher(req.user.id, teacherId);
+      await this.userRepository.followTeacher(req.user.userId, teacherId);
 
       // Get updated profile to return new following count
-      const updatedProfile = await this.userRepository.getUserProfile(req.user.id);
+      const updatedProfile = await this.userRepository.getUserProfile(req.user.userId);
 
       res.status(201).json({
         success: true,
@@ -125,13 +121,13 @@ export class UserController {
       }
 
       // Prevent self-unfollowing
-      if (req.user?.id === teacherId) {
+      if (req.user?.userId === teacherId) {
         throw new InvalidRoleError('Cannot unfollow yourself');
       }
 
       // Check if currently following
       const isFollowing = await this.userRepository.isFollowing(
-        req.user?.id,
+        req.user?.userId,
         teacherId
       );
 
@@ -141,7 +137,7 @@ export class UserController {
 
       // Perform unfollow operation
       const unfollowed = await this.userRepository.unfollowTeacher(
-        req.user?.id,
+        req.user?.userId,
         teacherId
       );
 
@@ -150,7 +146,7 @@ export class UserController {
       }
 
       // Get updated profile to return new following count
-      const updatedProfile = await this.userRepository.getUserProfile(req.user?.id);
+      const updatedProfile = await this.userRepository.getUserProfile(req.user?.userId);
 
       res.status(200).json({
         success: true,
