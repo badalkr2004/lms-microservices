@@ -1,18 +1,20 @@
 // src/services/video.service.ts
-import { db } from '../db';
-import { files, fileUploadSessions, courseLectures } from '../db/schema';
+import { db } from '@lms/database';
+import { files, fileUploadSessions, courseLectures } from '@lms/database';
 import { muxService } from './mux.service';
-import { createLogger } from '../utils/logger';
+import { logger } from '@lms/logger';
 import { AppError } from '../utils/errors';
 import { eq, and } from 'drizzle-orm';
-import { 
+import {
   VideoUploadRequest,
   VideoUploadResponse,
   VideoProcessingStatus,
-  VideoMetadata 
+  VideoMetadata,
 } from '../types/video.types';
+import { isValidVideoType } from '@/utils/validation.utils';
+import { generateUniqueFilename } from '@/utils/file.utils';
 
-const logger = createLogger('VideoService');
+// const logger = createLogger('VideoService');
 
 export class VideoService {
   /**
@@ -25,15 +27,15 @@ export class VideoService {
     const { courseId, lectureId, fileName, fileSize, contentType } = request;
 
     try {
-      logger.info('Initiating video upload', { 
-        courseId, 
-        lectureId, 
+      logger.info('Initiating video upload', {
+        courseId,
+        lectureId,
         fileName,
-        userId 
+        userId,
       });
 
       // Validate file type
-      if (!this.isValidVideoType(contentType)) {
+      if (!isValidVideoType(contentType)) {
         throw new AppError('Invalid video file type', 400);
       }
 
@@ -43,27 +45,30 @@ export class VideoService {
       }
 
       // Create file record in database
-      const [fileRecord] = await db.insert(files).values({
-        originalName: fileName,
-        fileName: this.generateFileName(fileName),
-        fileType: contentType,
-        fileSize,
-        s3Key: '', // Will be updated later
-        s3Url: '', // Will be updated later
-        userId,
-        category: 'video',
-        status: 'uploading',
-        metadata: JSON.stringify({
-          courseId,
-          lectureId,
-          uploadType: 'mux_video',
-        }),
-      }).returning();
+      const [fileRecord] = await db
+        .insert(files)
+        .values({
+          originalName: fileName,
+          fileName: generateUniqueFilename(fileName),
+          fileType: contentType,
+          fileSize,
+          s3Key: '', // Will be updated later
+          s3Url: '', // Will be updated later
+          userId,
+          category: 'video',
+          status: 'uploading',
+          metadata: JSON.stringify({
+            courseId,
+            lectureId,
+            uploadType: 'mux_video',
+          }),
+        })
+        .returning();
 
       // Create Mux direct upload
       const muxUpload = await muxService.createDirectUpload({
         courseId,
-        lectureId,
+        lectureId: lectureId as string,
         userId,
         fileName: fileRecord.fileName,
         originalName: fileName,
@@ -79,9 +84,9 @@ export class VideoService {
         expiresAt: new Date(Date.now() + muxUpload.timeout * 1000),
       });
 
-      logger.info('Video upload initiated successfully', { 
+      logger.info('Video upload initiated successfully', {
         fileId: fileRecord.id,
-        uploadId: muxUpload.uploadId 
+        uploadId: muxUpload.uploadId,
       });
 
       return {
@@ -92,10 +97,10 @@ export class VideoService {
         status: 'pending',
       };
     } catch (error) {
-      logger.error('Failed to initiate video upload', { 
-        error: error.message,
+      logger.error('Failed to initiate video upload', {
+        error: (error as Error).message,
         request,
-        userId 
+        userId,
       });
       throw error;
     }
@@ -106,14 +111,12 @@ export class VideoService {
    */
   async processWebhookEvent(payload: any): Promise<void> {
     try {
-      logger.info('Processing video webhook', { 
+      logger.info('Processing video webhook', {
         eventType: payload.type,
-        assetId: payload.data?.id 
+        assetId: payload.data?.id,
       });
 
-      const passthrough = payload.data?.passthrough 
-        ? JSON.parse(payload.data.passthrough) 
-        : null;
+      const passthrough = payload.data?.passthrough ? JSON.parse(payload.data.passthrough) : null;
 
       if (!passthrough?.fileId) {
         logger.warn('No file ID in webhook passthrough data');
@@ -124,27 +127,27 @@ export class VideoService {
         case 'video.asset.ready':
           await this.handleAssetReady(payload, passthrough);
           break;
-        
+
         case 'video.asset.errored':
           await this.handleAssetError(payload, passthrough);
           break;
-        
+
         case 'video.upload.asset_created':
           await this.handleUploadAssetCreated(payload, passthrough);
           break;
-        
+
         case 'video.upload.cancelled':
         case 'video.upload.errored':
           await this.handleUploadError(payload, passthrough);
           break;
-        
+
         default:
           logger.warn('Unhandled webhook event', { eventType: payload.type });
       }
     } catch (error) {
-      logger.error('Failed to process webhook event', { 
-        error: error.message,
-        payload 
+      logger.error('Failed to process webhook event', {
+        error: (error as Error).message,
+        payload,
       });
       throw error;
     }
@@ -160,15 +163,16 @@ export class VideoService {
     try {
       // Get asset details from Mux
       const asset = await muxService.getAsset(assetId);
-      
+
       // Get playback URL
       const playbackUrl = await muxService.getPlaybackUrl(assetId);
-      
+
       // Generate thumbnail
       const thumbnailUrl = await muxService.createThumbnail(assetId);
 
       // Update file record
-      await db.update(files)
+      await db
+        .update(files)
         .set({
           status: 'completed',
           s3Url: playbackUrl,
@@ -189,30 +193,31 @@ export class VideoService {
 
       // Update course lecture if lectureId is provided
       if (passthrough.lectureId) {
-        await db.update(courseLectures)
+        await db
+          .update(courseLectures)
           .set({
             videoUrl: playbackUrl,
             videoMuxAssetId: assetId,
             videoDuration: Math.ceil(asset.duration || 0),
-            updatedAt: new Date(),
+            updatedAt: new Date().toISOString(),
           })
           .where(eq(courseLectures.id, passthrough.lectureId));
       }
 
-      logger.info('Asset processing completed', { 
-        fileId, 
-        assetId, 
-        lectureId: passthrough.lectureId 
+      logger.info('Asset processing completed', {
+        fileId,
+        assetId,
+        lectureId: passthrough.lectureId,
       });
     } catch (error) {
-      logger.error('Failed to handle asset ready event', { 
-        error: error.message,
+      logger.error('Failed to handle asset ready event', {
+        error: (error as Error).message,
         assetId,
-        fileId 
+        fileId,
       });
-      
+
       // Mark as failed
-      await this.markVideoAsFailed(fileId, error.message);
+      await this.markVideoAsFailed(fileId, (error as Error).message);
     }
   }
 
@@ -236,7 +241,8 @@ export class VideoService {
 
     try {
       // Update file record with asset ID
-      await db.update(files)
+      await db
+        .update(files)
         .set({
           status: 'processing',
           s3Key: `mux-assets/${assetId}`,
@@ -250,17 +256,17 @@ export class VideoService {
         })
         .where(eq(files.id, fileId));
 
-      logger.info('Upload asset created, processing started', { 
-        fileId, 
-        uploadId, 
-        assetId 
+      logger.info('Upload asset created, processing started', {
+        fileId,
+        uploadId,
+        assetId,
       });
     } catch (error) {
-      logger.error('Failed to handle upload asset created', { 
+      logger.error('Failed to handle upload asset created', {
         error: error.message,
         fileId,
         uploadId,
-        assetId 
+        assetId,
       });
     }
   }
@@ -280,7 +286,8 @@ export class VideoService {
    */
   private async markVideoAsFailed(fileId: string, errorMessage: string): Promise<void> {
     try {
-      await db.update(files)
+      await db
+        .update(files)
         .set({
           status: 'failed',
           updatedAt: new Date(),
@@ -294,10 +301,10 @@ export class VideoService {
 
       logger.error('Video marked as failed', { fileId, errorMessage });
     } catch (error) {
-      logger.error('Failed to mark video as failed', { 
-        fileId, 
+      logger.error('Failed to mark video as failed', {
+        fileId,
         originalError: errorMessage,
-        updateError: error.message 
+        updateError: error.message,
       });
     }
   }
@@ -307,12 +314,10 @@ export class VideoService {
    */
   async getVideoStatus(fileId: string, userId: string): Promise<VideoProcessingStatus> {
     try {
-      const [fileRecord] = await db.select()
+      const [fileRecord] = await db
+        .select()
         .from(files)
-        .where(and(
-          eq(files.id, fileId),
-          eq(files.userId, userId)
-        ));
+        .where(and(eq(files.id, fileId), eq(files.userId, userId)));
 
       if (!fileRecord) {
         throw new AppError('Video not found', 404);
@@ -324,19 +329,22 @@ export class VideoService {
       if (fileRecord.status === 'processing' && metadata.muxAssetId) {
         try {
           const asset = await muxService.getAsset(metadata.muxAssetId);
-          
+
           // Update status if it changed in Mux
           if (asset.status === 'ready' && fileRecord.status !== 'completed') {
-            await this.handleAssetReady({
-              type: 'video.asset.ready',
-              data: { id: metadata.muxAssetId }
-            }, metadata);
+            await this.handleAssetReady(
+              {
+                type: 'video.asset.ready',
+                data: { id: metadata.muxAssetId },
+              },
+              metadata
+            );
           }
         } catch (error) {
-          logger.warn('Failed to check Mux asset status', { 
-            fileId, 
+          logger.warn('Failed to check Mux asset status', {
+            fileId,
             assetId: metadata.muxAssetId,
-            error: error.message 
+            error: (error as Error).message,
           });
         }
       }
@@ -355,10 +363,10 @@ export class VideoService {
         error: metadata.error || null,
       };
     } catch (error) {
-      logger.error('Failed to get video status', { 
-        fileId, 
-        userId, 
-        error: error.message 
+      logger.error('Failed to get video status', {
+        fileId,
+        userId,
+        error: error.message,
       });
       throw error;
     }
@@ -393,10 +401,10 @@ export class VideoService {
         createdAt: status.uploadedAt,
       };
     } catch (error) {
-      logger.error('Failed to get video metadata', { 
-        fileId, 
-        userId, 
-        error: error.message 
+      logger.error('Failed to get video metadata', {
+        fileId,
+        userId,
+        error: error.message,
       });
       throw error;
     }
@@ -406,23 +414,20 @@ export class VideoService {
    * Generate signed playback URL for premium content
    */
   async getSignedPlaybackUrl(
-    fileId: string, 
+    fileId: string,
     userId: string,
     expirationHours: number = 24
   ): Promise<string> {
     try {
       const metadata = await this.getVideoMetadata(fileId, userId);
-      
+
       const expirationSeconds = expirationHours * 3600;
-      return await muxService.getSignedPlaybackUrl(
-        metadata.assetId, 
-        expirationSeconds
-      );
+      return await muxService.getSignedPlaybackUrl(metadata.assetId, expirationSeconds);
     } catch (error) {
-      logger.error('Failed to generate signed playback URL', { 
-        fileId, 
-        userId, 
-        error: error.message 
+      logger.error('Failed to generate signed playback URL', {
+        fileId,
+        userId,
+        error: error.message,
       });
       throw error;
     }
@@ -436,12 +441,10 @@ export class VideoService {
       logger.info('Deleting video', { fileId, userId });
 
       // Get file record
-      const [fileRecord] = await db.select()
+      const [fileRecord] = await db
+        .select()
         .from(files)
-        .where(and(
-          eq(files.id, fileId),
-          eq(files.userId, userId)
-        ));
+        .where(and(eq(files.id, fileId), eq(files.userId, userId)));
 
       if (!fileRecord) {
         throw new AppError('Video not found', 404);
@@ -454,9 +457,9 @@ export class VideoService {
         try {
           await muxService.deleteAsset(metadata.muxAssetId);
         } catch (error) {
-          logger.warn('Failed to delete Mux asset (continuing with DB cleanup)', { 
+          logger.warn('Failed to delete Mux asset (continuing with DB cleanup)', {
             assetId: metadata.muxAssetId,
-            error: error.message 
+            error: error.message,
           });
         }
       }
@@ -466,7 +469,8 @@ export class VideoService {
 
       // Clear lecture video reference if exists
       if (metadata.lectureId) {
-        await db.update(courseLectures)
+        await db
+          .update(courseLectures)
           .set({
             videoUrl: null,
             videoMuxAssetId: null,
@@ -478,20 +482,19 @@ export class VideoService {
 
       logger.info('Video deleted successfully', { fileId });
     } catch (error) {
-      logger.error('Failed to delete video', { 
-        fileId, 
-        userId, 
-        error: error.message 
+      logger.error('Failed to delete video', {
+        fileId,
+        userId,
+        error: error.message,
       });
       throw error;
     }
   }
 }
 
-
-  /**
-   * List user's videos with pagination
-   */
+/**
+ * List user's videos with pagination
+ */
 //   async listUserVideos(
 //     userId: string,
 //     options: {
@@ -548,11 +551,11 @@ export class VideoService {
 //           try {
 //             return await this.getVideoStatus(file.id, userId);
 //           } catch (error) {
-//             logger.warn('Failed to get status for video', { 
-//               fileId: file.id, 
-//               error: error.message 
+//             logger.warn('Failed to get status for video', {
+//               fileId: file.id,
+//               error: error.message
 //             });
-            
+
 //             return {
 //               fileId: file.id,
 //               status: file.status as any,

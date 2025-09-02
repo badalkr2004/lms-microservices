@@ -4,6 +4,7 @@ export interface VideoUploadMetadata {
   userId: string;
   fileName: string;
   originalName: string;
+  fileId: string;
 }
 
 export interface MuxUploadResponse {

@@ -4,14 +4,14 @@ import { VideoService } from '../services/video.service';
 import { muxService } from '../services/mux.service';
 import { logger } from '@lms/logger';
 import { AppError } from '../utils/errors';
-import { 
+import {
   validateVideoUpload,
   validateVideoStatus,
   validateWebhook,
   validateSignedUrl,
   validateListVideos,
   validateBulkProcess,
-  validateThumbnail
+  validateThumbnail,
 } from '../validations/video.validation';
 
 const videoService = new VideoService();
@@ -44,9 +44,9 @@ export class VideoController {
 
       const uploadResponse = await videoService.initiateVideoUpload(parsed.data, userId);
 
-      logger.info('Video upload initiated', { 
+      logger.info('Video upload initiated', {
         fileId: uploadResponse.fileId,
-        userId 
+        userId,
       });
 
       res.status(201).json({
@@ -123,11 +123,7 @@ export class VideoController {
       const userId = req.headers['x-user-id'] as string;
       if (!userId) throw new AppError('User ID required', 401);
 
-      const signedUrl = await videoService.getSignedPlaybackUrl(
-        fileId, 
-        userId, 
-        expirationHours
-      );
+      const signedUrl = await videoService.getSignedPlaybackUrl(fileId, userId, expirationHours);
 
       res.status(200).json({
         success: true,
@@ -145,29 +141,29 @@ export class VideoController {
    * List user videos
    * GET /api/videos
    */
-//   async listVideos(req: Request, res: Response, next: NextFunction): Promise<void> {
-//     try {
-//       const parsed = validateListVideos(req.query);
-//       if (!parsed.success) {
-//         const err = formatZodError(parsed.error)[0];
-//         throw new AppError(err.message, 400);
-//       }
+  //   async listVideos(req: Request, res: Response, next: NextFunction): Promise<void> {
+  //     try {
+  //       const parsed = validateListVideos(req.query);
+  //       if (!parsed.success) {
+  //         const err = formatZodError(parsed.error)[0];
+  //         throw new AppError(err.message, 400);
+  //       }
 
-//       const userId = req.headers['x-user-id'] as string;
-//       if (!userId) throw new AppError('User ID required', 401);
+  //       const userId = req.headers['x-user-id'] as string;
+  //       if (!userId) throw new AppError('User ID required', 401);
 
-//       const options = parsed.data;
-//       const result = await videoService.listUserVideos(userId, options);
+  //       const options = parsed.data;
+  //       const result = await videoService.listUserVideos(userId, options);
 
-//       res.status(200).json({
-//         success: true,
-//         data: result.videos,
-//         pagination: result.pagination,
-//       });
-//     } catch (error) {
-//       next(error);
-//     }
-//   }
+  //       res.status(200).json({
+  //         success: true,
+  //         data: result.videos,
+  //         pagination: result.pagination,
+  //       });
+  //     } catch (error) {
+  //       next(error);
+  //     }
+  //   }
 
   /**
    * Delete video
@@ -211,9 +207,9 @@ export class VideoController {
 
       await videoService.processWebhookEvent(parsed.data);
 
-      logger.info('Webhook processed successfully', { 
+      logger.info('Webhook processed successfully', {
         eventType: parsed.data.type,
-        assetId: parsed.data.data?.id 
+        assetId: parsed.data.data?.id,
       });
 
       res.status(200).json({
@@ -236,12 +232,12 @@ export class VideoController {
       if (!userId) throw new AppError('User ID required', 401);
 
       const metadata = await videoService.getVideoMetadata(fileId, userId);
-    //   const analytics = await videoService.getVideoAnalytics(metadata.assetId);
+      //   const analytics = await videoService.getVideoAnalytics(metadata.assetId);
 
       res.status(200).json({
         success: true,
         // data: analytics,
-        data:"this is temp analytics - video controller line 244"
+        data: 'this is temp analytics - video controller line 244',
       });
     } catch (error) {
       next(error);
@@ -264,12 +260,12 @@ export class VideoController {
       const userId = req.headers['x-user-id'] as string;
       if (!userId) throw new AppError('User ID required', 401);
 
-    //   const result = await videoService.bulkProcessVideos(videoIds, userId);
+      //   const result = await videoService.bulkProcessVideos(videoIds, userId);
 
       res.status(200).json({
         success: true,
         message: 'Bulk processing completed',
-        data: "this is temp res of bulk process video - video controller line - 272",
+        data: 'this is temp res of bulk process video - video controller line - 272',
       });
     } catch (error) {
       next(error);
@@ -316,7 +312,7 @@ export class VideoController {
   async healthCheck(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const muxHealthy = await muxService.healthCheck();
-      
+
       res.status(200).json({
         success: true,
         data: {
