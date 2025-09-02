@@ -10,6 +10,7 @@ export const UserProfileSchema = z.object({
   email: z.string().email(),
   avatarUrl: z.string().url().nullable(),
   followingCount: z.number().min(0),
+  followersCount: z.number().min(0),
 });
 
 // Follow/Unfollow request validation
@@ -68,7 +69,7 @@ export class NotFollowingError extends Error {
 // Request context type (assuming you have auth middleware)
 export interface AuthenticatedRequest extends Request{
   user?: {
-    id: string;
+    userId: string;
     email: string;
     role: 'student' | 'teacher';
   };
