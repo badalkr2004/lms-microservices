@@ -11,20 +11,18 @@ export class WebhookUtils {
         return false;
       }
 
-      // Parse mux-signature header (timestamp & signature value)
-      const [tPart, v1Part] = signature.split(',');
-      const timestamp = tPart.split('=')[1];
-      const v1 = v1Part.split('=')[1];
-      console.log(`timestamp: ${timestamp}`);
+      const parts = signature.split(',');
+      const timestamp = parts[0].split('=')[1];
+      const signatures = parts.filter(p => p.startsWith('v1=')).map(p => p.split('=')[1]);
 
-      // Create expected signature
       const expected = crypto
         .createHmac('sha256', secret)
-        .update(`${timestamp}.${payload.toString('utf-8')}`)
+        .update(`${timestamp}.${payload.toString('utf8')}`)
         .digest('hex');
-      console.log(`expected: ${expected}`);
-      console.log(`v1: ${v1}`);
-      return crypto.timingSafeEqual(Buffer.from(v1), Buffer.from(expected));
+
+      return signatures.some(sig =>
+        crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))
+      );
     } catch (error) {
       logger.error('Signature verification failed', { error: (error as Error).message });
       return false;

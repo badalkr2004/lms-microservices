@@ -7,13 +7,14 @@ import compression from 'compression';
 
 import { config } from './config';
 import routes from './routes';
-import { 
-  errorHandler, 
-  notFoundHandler, 
-  securityHeaders, 
+import {
+  errorHandler,
+  notFoundHandler,
+  securityHeaders,
   requestLogger,
-  apiRateLimit 
-} from "./middlewares"
+  apiRateLimit,
+} from './middlewares';
+import { videoController } from './controllers/video.controller';
 
 // Load environment variables
 dotenv.config();
@@ -30,42 +31,48 @@ const logger = {
     if (config.NODE_ENV === 'development') {
       console.debug(`[DEBUG] ${new Date().toISOString()} ${message}`);
     }
-  }
+  },
 };
 
 // Security middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
     },
-  },
-}));
+  })
+);
 
 app.use(securityHeaders);
 
 // CORS configuration
 // const corsOptions = {
-//   origin: config.NODE_ENV === 'production' 
+//   origin: config.NODE_ENV === 'production'
 //     ? ['https://your-lms-domain.com'] // Replace with your actual domains
 //     : ["*"],
 //   credentials: true,
 //   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 //   allowedHeaders: [
-//     'Content-Type', 
-//     'Authorization', 
-//     'X-API-Key', 
-//     'X-Service-ID', 
-//     'X-User-ID', 
+//     'Content-Type',
+//     'Authorization',
+//     'X-API-Key',
+//     'X-Service-ID',
+//     'X-User-ID',
 //     'X-User-Role'
 //   ],
 // };
 
+app.use(cors({ origin: 'http://127.0.0.1:5500' }));
 
-app.use(cors({origin:'http://127.0.0.1:5500'}));
-
+app.use(
+  '/api/videos/webhook',
+  express.raw({ type: 'application/json' }),
+  videoController.handleWebhook.bind(videoController)
+);
 // General middleware
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
@@ -81,8 +88,8 @@ app.use(apiRateLimit);
 
 // Health check (before routes)
 app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ 
-    status: 'ok', 
+  res.status(200).json({
+    status: 'ok',
     service: 'file-service',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
@@ -101,12 +108,12 @@ app.use(errorHandler);
 // Graceful shutdown handler
 const gracefulShutdown = (signal: string) => {
   logger.info(`Received ${signal}. Starting graceful shutdown...`);
-  
+
   const server = app.listen(PORT);
-  
+
   server.close(() => {
     logger.info('HTTP server closed.');
-    
+
     // Close database connections, cleanup resources, etc.
     process.exit(0);
   });
@@ -123,7 +130,7 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Handle uncaught exceptions and rejections
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   logger.error(`Uncaught Exception: ${error.message}`);
   process.exit(1);
 });
@@ -188,7 +195,7 @@ export default app;
 // // Error handling middleware
 // app.use((err: AppError, req: Request, res: Response, next: NextFunction) => {
 //   const statusCode = err.statusCode || 500;
-  
+
 //   // Log error
 //   logger.error(`${err.message}`);
 //   if (process.env.NODE_ENV === 'development') {

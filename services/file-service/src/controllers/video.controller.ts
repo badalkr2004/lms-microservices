@@ -201,11 +201,11 @@ export class VideoController {
 
       console.log('mux-signature', signature);
       console.log('req.body', req.body);
-      if (!this.verifyWebhookSignature(req.body, signature)) {
+      if (!this.verifyWebhookSignature(req.body as Buffer, signature)) {
         throw new AppError('Invalid webhook signature', 401);
       }
 
-      const parsed = validateWebhook(req.body);
+      const parsed = validateWebhook(JSON.parse(req.body));
       console.log('parsed', parsed);
       if (!parsed.success) {
         const err = formatZodError(parsed.error)[0];

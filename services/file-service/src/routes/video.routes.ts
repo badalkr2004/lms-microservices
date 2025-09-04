@@ -117,11 +117,7 @@ router.post(
  * @desc    Handle Mux webhooks (public endpoint)
  * @access  Public (with signature verification)
  */
-router.post(
-  '/webhook',
-  express.raw({ type: 'application/json' }),
-  asyncHandler(videoController.handleWebhook.bind(videoController))
-);
+// router.post('/webhook', asyncHandler(videoController.handleWebhook.bind(videoController)));
 
 /**
  * @route   GET /api/videos/health
