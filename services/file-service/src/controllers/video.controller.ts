@@ -13,6 +13,8 @@ import {
   validateBulkProcess,
   validateThumbnail,
 } from '../validations/video.validation';
+import { WebhookUtils } from '@/utils/webhook.utils';
+import { muxConfig } from '@/config';
 
 const videoService = new VideoService();
 
@@ -193,13 +195,18 @@ export class VideoController {
    * POST /api/videos/webhook
    */
   async handleWebhook(req: Request, res: Response, next: NextFunction): Promise<void> {
+    console.log('webhook triggered::::');
     try {
       const signature = req.headers['mux-signature'] as string;
+
+      console.log('mux-signature', signature);
+      console.log('req.body', req.body);
       if (!this.verifyWebhookSignature(req.body, signature)) {
         throw new AppError('Invalid webhook signature', 401);
       }
 
       const parsed = validateWebhook(req.body);
+      console.log('parsed', parsed);
       if (!parsed.success) {
         const err = formatZodError(parsed.error)[0];
         throw new AppError(err.message, 400);
@@ -330,20 +337,22 @@ export class VideoController {
    * Verify Mux webhook signature
    */
   private verifyWebhookSignature(payload: any, signature: string): boolean {
+    console.log('verifyWebhook signature called:');
     try {
       if (!signature) {
         logger.warn('Missing webhook signature');
         return false;
       }
 
-      const webhookSecret = process.env.MUX_WEBHOOK_SECRET;
+      const webhookSecret = muxConfig.MUX_WEBHOOK_SECRET;
       if (!webhookSecret) {
         logger.warn('Webhook secret not configured');
         return false;
       }
 
-      // TODO: Implement proper HMAC verification
-      return signature.length > 0;
+      const isValid = WebhookUtils.verifyMuxSignature(payload, signature, webhookSecret);
+
+      return isValid;
     } catch (error: any) {
       logger.error('Webhook signature verification failed', { error: error.message });
       return false;

@@ -317,14 +317,14 @@ export class VideoService {
    */
   private calculateProcessingProgress(status: string, metadata: any): number {
     const progressMap: Record<string, number> = {
-      'pending': 0,
-      'uploading': 10,
-      'uploaded': 25,
-      'processing': 50,
-      'transcoding': 75,
-      'completed': 100,
-      'failed': 0,
-      'cancelled': 0,
+      pending: 0,
+      uploading: 10,
+      uploaded: 25,
+      processing: 50,
+      transcoding: 75,
+      completed: 100,
+      failed: 0,
+      cancelled: 0,
     };
 
     let baseProgress = progressMap[status] || 0;
@@ -355,9 +355,10 @@ export class VideoService {
       }
 
       const metadata = fileRecord.metadata ? JSON.parse(fileRecord.metadata) : {};
+      console.log(metadata);
 
       // If video is processing and has asset ID, check Mux status
-      if (fileRecord.status === 'processing' && metadata.muxAssetId) {
+      if (fileRecord.status === 'uploading' && metadata.muxAssetId) {
         try {
           const asset = await muxService.getAsset(metadata.muxAssetId);
 
@@ -530,14 +531,14 @@ export class VideoService {
     options: VideoFilterOptions = {}
   ): Promise<VideoListResponse> {
     try {
-      const { 
-        page = 1, 
-        limit = 20, 
-        status, 
-        courseId, 
+      const {
+        page = 1,
+        limit = 20,
+        status,
+        courseId,
         sortBy = 'uploadedAt',
         sortOrder = 'desc',
-        search 
+        search,
       } = options;
       const offset = (page - 1) * limit;
 
@@ -545,10 +546,7 @@ export class VideoService {
       let query = db
         .select()
         .from(files)
-        .where(and(
-          eq(files.userId, userId),
-          eq(files.category, 'video')
-        ));
+        .where(and(eq(files.userId, userId), eq(files.category, 'video')));
 
       // Add status filter
       if (status) {
@@ -572,10 +570,7 @@ export class VideoService {
       let countQuery = db
         .select({ count: sql<number>`count(*)` })
         .from(files)
-        .where(and(
-          eq(files.userId, userId),
-          eq(files.category, 'video')
-        ));
+        .where(and(eq(files.userId, userId), eq(files.category, 'video')));
 
       if (status) {
         countQuery = countQuery.where(eq(files.status, status));
@@ -602,13 +597,13 @@ export class VideoService {
 
       // Convert to video status objects
       const videos = await Promise.all(
-        filteredResults.map(async (file) => {
+        filteredResults.map(async file => {
           try {
             return await this.getVideoStatus(file.id, userId);
           } catch (error) {
             logger.warn('Failed to get status for video', {
               fileId: file.id,
-              error: (error as Error).message
+              error: (error as Error).message,
             });
 
             // Return basic status for failed videos
@@ -788,7 +783,7 @@ export class VideoService {
       if (metadata.muxAssetId) {
         try {
           const asset = await muxService.getAsset(metadata.muxAssetId);
-          
+
           if (asset.status === 'ready') {
             // Asset is actually ready, trigger the ready handler
             await this.handleAssetReady(
@@ -804,7 +799,7 @@ export class VideoService {
             fileId,
             assetId: metadata.muxAssetId,
           });
-          
+
           // Asset doesn't exist, mark as failed again
           await this.markVideoAsFailed(fileId, 'Asset not found in Mux');
         }
@@ -983,10 +978,7 @@ export class VideoService {
         updateData.originalName = updates.title;
       }
 
-      await db
-        .update(files)
-        .set(updateData)
-        .where(eq(files.id, fileId));
+      await db.update(files).set(updateData).where(eq(files.id, fileId));
 
       logger.info('Video metadata updated', { fileId, updates });
     } catch (error) {

@@ -45,8 +45,9 @@ class MuxService {
             courseId: metadata.courseId,
             lectureId: metadata.lectureId,
             userId: metadata.userId,
-            fileName: metadata.fileName,
-            originalName: metadata.originalName,
+            // fileName: metadata.fileName,
+            // originalName: metadata.originalName,
+            fileId: metadata.fileId,
           }),
         },
         timeout: 3600, // 1 hour timeout

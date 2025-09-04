@@ -1,18 +1,19 @@
 // src/routes/video.routes.ts
 import { Router } from 'express';
+import express from 'express';
 import { videoController } from '../controllers/video.controller';
 import { asyncHandler } from '../utils/async.utils';
-import { 
-  // authMiddleware, 
-  // roleMiddleware, 
-  validateRequest 
+import {
+  // authMiddleware,
+  // roleMiddleware,
+  validateRequest,
 } from '../middlewares';
-import { 
+import {
   videoUploadSchema,
   signedUrlSchema,
   thumbnailSchema,
   bulkProcessSchema,
-  listVideosSchema 
+  listVideosSchema,
 } from '../validations/video.validation';
 
 const router: Router = Router();
@@ -36,10 +37,7 @@ router.post(
  * @desc    Get video processing status
  * @access  Private
  */
-router.get(
-  '/:fileId/status',
-  asyncHandler(videoController.getVideoStatus.bind(videoController))
-);
+router.get('/:fileId/status', asyncHandler(videoController.getVideoStatus.bind(videoController)));
 
 /**
  * @route   GET /api/videos/:fileId/metadata
@@ -89,10 +87,7 @@ router.post(
  * @desc    Delete video from Mux and database
  * @access  Private
  */
-router.delete(
-  '/:fileId',
-  asyncHandler(videoController.deleteVideo.bind(videoController))
-);
+router.delete('/:fileId', asyncHandler(videoController.deleteVideo.bind(videoController)));
 
 /**
  * @route   POST /api/videos/:fileId/analytics
@@ -124,6 +119,7 @@ router.post(
  */
 router.post(
   '/webhook',
+  express.raw({ type: 'application/json' }),
   asyncHandler(videoController.handleWebhook.bind(videoController))
 );
 
@@ -132,9 +128,6 @@ router.post(
  * @desc    Video service health check
  * @access  Public
  */
-router.get(
-  '/health',
-  asyncHandler(videoController.healthCheck.bind(videoController))
-);
+router.get('/health', asyncHandler(videoController.healthCheck.bind(videoController)));
 
 export default router;
