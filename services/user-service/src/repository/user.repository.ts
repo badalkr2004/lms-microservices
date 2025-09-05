@@ -1,6 +1,7 @@
 // repository/user.repository.ts
 import { db, users, userProfiles, followers } from '@lms/database';
-import { eq, and, count, sql } from 'drizzle-orm';
+import { eq, and, or, count, sql, like } from 'drizzle-orm';
+import { PaginationMeta } from '@lms/common';
 
 export interface UserProfile {
   firstName: string | null;
@@ -19,32 +20,114 @@ export class UserRepository {
   async getUserProfile(userId: string): Promise<any | null> {
     try {
       const result = await db
-        .select({
-          firstName: userProfiles.firstName,
-          lastName: userProfiles.lastName,
-          displayName: userProfiles.displayName,
-          email: users.email,
-          avatarUrl: userProfiles.avatarUrl,
-          followingCount: sql<number>`CAST((
-          SELECT COALESCE(COUNT(*), 0) 
-          FROM ${followers} 
-          WHERE ${followers.followerId} = ${userProfiles.userId}
-      ) AS INTEGER)`,
-          followersCount: sql<number>`CAST((
-          SELECT COALESCE(COUNT(*), 0) 
-          FROM ${followers} 
-          WHERE ${followers.followingId} = ${userProfiles.userId}
-        ) AS INTEGER)`,
-        })
+        .select()
         .from(userProfiles)
         .innerJoin(users, eq(userProfiles.userId, users.id))
-        .where(and(eq(userProfiles.userId, userId)))
+        .where(eq(userProfiles.userId, userId))
         .limit(1);
 
-      return result[0] || null;
+      if (!result[0]) return null;
+
+      // Get the base data
+      const userData = result[0];
+
+      const [followingCountResult] = await db
+        .select({ count: count() })
+        .from(followers)
+        .where(eq(followers.followerId, userId));
+
+      const [followersCountResult] = await db
+        .select({ count: count() })
+        .from(followers)
+        .where(eq(followers.followingId, userId));
+
+      return {
+        ...userData.user_profiles,
+        ...userData.users,
+        followingCount: followingCountResult?.count || 0,
+        followersCount: followersCountResult?.count || 0,
+      };
     } catch (error) {
       console.error('Error fetching user profile:', error);
       throw new Error('Failed to fetch user profile');
+    }
+  }
+
+  /**
+   * Update user profile
+   */
+  // async updateUserProfile(userId: string, profile: UserProfile): Promise<void> {
+  //   try {
+  //     await db.update(userProfiles).set(profile).where(eq(userProfiles.userId, userId));
+  //   } catch (error) {
+  //     console.error('Error updating user profile:', error);
+  //     throw new Error('Failed to update user profile');
+  //   }
+  // }
+
+  /**
+   * Get users lists with pagination
+   */
+  async getUsersLists(page: number, limit: number, search: string, role: 'student' | 'teacher'): Promise<any> {
+    try {
+      const offset = (page - 1) * limit;
+      const result = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          phone: users.phone,
+          firstName: userProfiles.firstName,
+          lastName: userProfiles.lastName,
+          displayName: userProfiles.displayName,
+          avatarUrl: userProfiles.avatarUrl,
+          role: users.role,
+        })
+        .from(users)
+        .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
+        .limit(limit)
+        .offset(offset)
+        .where(
+          and(
+            eq(users.role, role),
+            search ? or(
+              like(users.email, `%${search}%`),
+              like(users.phone, `%${search}%`),
+              like(userProfiles.firstName, `%${search}%`),
+              like(userProfiles.lastName, `%${search}%`)
+            ) : undefined
+          )
+        );
+      const total = await db
+        .select({ count: count() })
+        .from(users)
+        .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
+        .where(
+          and(
+            eq(users.role, role),
+            search ? or(
+              like(users.email, `%${search}%`),
+              like(users.phone, `%${search}%`),
+              like(userProfiles.firstName, `%${search}%`),
+              like(userProfiles.lastName, `%${search}%`)
+            ) : undefined
+          )
+        );
+      const totalPages = Math.ceil(total[0].count / limit);
+      const paginationMeta: PaginationMeta = {
+        total: total[0].count,
+        page: page,
+        limit: limit,
+        pages: totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      };
+      return {
+        data: result,
+        meta: paginationMeta,
+      };
+    } catch (error) {
+      console.error('Error fetching users lists:', error);
+      throw new Error('Failed to fetch users lists');
     }
   }
 

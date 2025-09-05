@@ -11,7 +11,7 @@ export const UserProfileSchema = z.object({
   avatarUrl: z.string().url().nullable(),
   followingCount: z.number().min(0),
   followersCount: z.number().min(0),
-});
+}).passthrough();
 
 // Follow/Unfollow request validation
 export const FollowRequestSchema = z.object({
