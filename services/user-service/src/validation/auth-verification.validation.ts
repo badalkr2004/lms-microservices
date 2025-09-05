@@ -20,3 +20,10 @@ export const getUserProfileSchema = z.object({
     userId: z.string().min(1, 'User ID is required'),
   }),
 });
+
+export const getUserListSchema = z.object({
+  page: z.coerce.number().min(1, 'Page must be at least 1').optional(),
+  limit: z.coerce.number().min(1, 'Limit must be at least 1').optional(),
+  search: z.string().optional(),
+  role: z.enum(['student', 'teacher']).optional(),
+});
