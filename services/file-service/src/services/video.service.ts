@@ -355,7 +355,6 @@ export class VideoService {
       }
 
       const metadata = fileRecord.metadata ? JSON.parse(fileRecord.metadata) : {};
-      console.log(metadata);
 
       // If video is processing and has asset ID, check Mux status
       if (fileRecord.status === 'uploading' && metadata.muxAssetId) {

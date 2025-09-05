@@ -195,18 +195,15 @@ export class VideoController {
    * POST /api/videos/webhook
    */
   async handleWebhook(req: Request, res: Response, next: NextFunction): Promise<void> {
-    console.log('webhook triggered::::');
     try {
       const signature = req.headers['mux-signature'] as string;
 
-      console.log('mux-signature', signature);
-      console.log('req.body', req.body);
       if (!this.verifyWebhookSignature(req.body as Buffer, signature)) {
         throw new AppError('Invalid webhook signature', 401);
       }
 
       const parsed = validateWebhook(JSON.parse(req.body));
-      console.log('parsed', parsed);
+
       if (!parsed.success) {
         const err = formatZodError(parsed.error)[0];
         throw new AppError(err.message, 400);
@@ -337,7 +334,6 @@ export class VideoController {
    * Verify Mux webhook signature
    */
   private verifyWebhookSignature(payload: any, signature: string): boolean {
-    console.log('verifyWebhook signature called:');
     try {
       if (!signature) {
         logger.warn('Missing webhook signature');
