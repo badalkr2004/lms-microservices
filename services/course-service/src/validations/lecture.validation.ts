@@ -14,6 +14,13 @@ export const createLectureSchema = z.object({
   isPreview: z.boolean().default(false),
   isDownloadable: z.boolean().default(false),
   sortOrder: z.number().int().min(0),
+  videoFile: z
+    .object({
+      fileName: z.string(),
+      fileSize: z.number(),
+      contentType: z.string(),
+    })
+    .optional(),
 });
 
 export const updateLectureSchema = createLectureSchema.partial().omit({ courseId: true });

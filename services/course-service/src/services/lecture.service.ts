@@ -3,11 +3,15 @@ import { LectureRepository } from '../repositories/lecture.repository';
 import { CourseRepository } from '../repositories/course.repository';
 import { CreateLectureInput, UpdateLectureInput } from '@lms/database';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
+import { LectureResponse } from '@/types';
+import { FileClient } from '@/client/file.client';
+import { logger } from '@lms/logger';
 
 export class LectureService {
   constructor(
     private lectureRepository: LectureRepository,
-    private courseRepository: CourseRepository
+    private courseRepository: CourseRepository,
+    private fileClient: FileClient
   ) {}
 
   async createLecture(data: CreateLectureInput, userId: string, userRole: string) {
@@ -38,6 +42,55 @@ export class LectureService {
     await this.updateCourseStatistics(data.courseId);
 
     return lecture;
+  }
+
+  async createLectureWithVideo(
+    userRole: string,
+    lectureData: CreateLectureInput & {
+      videoFile: {
+        fileName: string;
+        fileSize: number;
+        contentType: string;
+      };
+    },
+    userId: string
+  ) {
+    try {
+      // Create the lecture first
+
+      const lecture = await this.createLecture(lectureData, userId, userRole);
+
+      // Initiate video upload if video file is provided
+
+      const videoUploadResponse = await this.fileClient.initiateVideoUpload(
+        {
+          courseId: lectureData.courseId,
+          lectureId: lecture.id,
+          fileName: lectureData.videoFile.fileName,
+          fileSize: lectureData.videoFile.fileSize,
+          contentType: lectureData.videoFile.contentType,
+        },
+        userId
+      );
+
+      logger.info('Lecture with video upload initiated', {
+        lectureId: lecture.id,
+        fileId: videoUploadResponse.fileId,
+      });
+
+      return {
+        lecture,
+        videoUpload: {
+          fileId: videoUploadResponse.fileId,
+          uploadUrl: videoUploadResponse.uploadUrl,
+          uploadId: videoUploadResponse.uploadId,
+          expiresAt: videoUploadResponse.expiresAt,
+        },
+      };
+    } catch (error) {
+      logger.error('Failed to initiate video upload', error);
+      throw error;
+    }
   }
 
   async getLectureById(id: string) {

@@ -15,4 +15,7 @@ export const config = {
   redis: {
     url: process.env.REDIS_URL || 'redis://localhost:6379',
   },
+  fileService: {
+    url: process.env.FILE_SERVICE_URL || 'http://localhost:3008',
+  },
 } as const;

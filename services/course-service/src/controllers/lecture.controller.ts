@@ -19,6 +19,25 @@ export class LectureController {
       next(error);
     }
   };
+  createLectureWithVideo = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    console.log('1. Lecture with video in controller called::');
+    try {
+      if (!req.user) {
+        throw new ForbiddenError('Authentication required');
+      }
+      console.log('2. creating lecture with video::');
+      console.log('req.body::', req.body);
+      const lectureWithVideo = await this.lectureService.createLectureWithVideo(
+        req.user.role,
+        req.body,
+        req.user.id
+      );
+      console.log('6.Lecture with video in cotroller::', lectureWithVideo);
+      successResponse(res, 'Lecture created successfully', lectureWithVideo, 201);
+    } catch (error) {
+      next(error);
+    }
+  };
 
   getLectureById = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {

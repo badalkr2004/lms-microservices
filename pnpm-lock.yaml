@@ -378,6 +378,9 @@ importers:
       '@types/morgan':
         specifier: ^1.9.10
         version: 1.9.10
+      axios:
+        specifier: 1.11.0
+        version: 1.11.0
       compression:
         specifier: ^1.8.1
         version: 1.8.1

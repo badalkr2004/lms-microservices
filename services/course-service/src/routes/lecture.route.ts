@@ -13,13 +13,14 @@ import {
 } from '../middleware/auth';
 import { validate } from '../middleware/validation.middleware';
 import { createLectureSchema, updateLectureSchema } from '../validations/lecture.validation';
+import { fileClient } from '@/client/file.client';
 
 const router: Router = Router();
 
 // Initialize dependencies
 const courseRepository = new CourseRepository();
 const lectureRepository = new LectureRepository();
-const lectureService = new LectureService(lectureRepository, courseRepository);
+const lectureService = new LectureService(lectureRepository, courseRepository, fileClient);
 const lectureController = new LectureController(lectureService);
 
 // Public routes (with optional auth for enrollment checks)
@@ -34,6 +35,14 @@ router.post(
   ...protectCourseCreate,
   validate(createLectureSchema),
   lectureController.createLecture
+);
+
+router.post(
+  '/with-video',
+  authenticate,
+  ...protectCourseCreate,
+  validate(createLectureSchema),
+  lectureController.createLectureWithVideo
 );
 
 router.put(

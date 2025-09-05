@@ -58,3 +58,23 @@ export interface EnrollmentFilters {
   courseId?: string;
   status?: string;
 }
+
+export interface LectureResponse {
+  id: string;
+  courseId: string;
+  chapterId: string | null;
+  title: string;
+  description: string | null;
+  contentType: string;
+  videoUrl: string | null;
+  videoDuration: number | null;
+  videoMuxAssetId: string | null;
+  pdfUrl: string | null;
+  textContent: string | null;
+  isPreview: boolean;
+  isDownloadable: boolean;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
