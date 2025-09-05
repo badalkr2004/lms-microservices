@@ -1,11 +1,12 @@
 // routes/user.route.ts
-import { Router, RequestHandler } from 'express';
+import { Router } from 'express';
 import { UserController, handleUserErrors } from '../controllers/user.controller';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { authMiddleware, roleMiddleware } from '../middleware/auth.middleware';
 import { rateLimitMiddleware } from '../middleware/user_middleware/rateLimit.middleware';
-import { auth } from 'firebase-admin';
+import { validateQuery } from '@/middleware/validation.middleware';
+import { getUserListSchema } from '@/validation/auth-verification.validation';
 
-const router:Router = Router();
+const router: Router = Router();
 const userController = new UserController();
 
 /**
@@ -30,12 +31,25 @@ const followRateLimit = rateLimitMiddleware({
 // GET /api/users/profile - Get student profile (name, email, avatar, following count)
 router.get('/profile', authMiddleware, userController.getProfile.bind(userController));
 
+// POST /api/users/profile - Update student profile
+// router.post('/profile', authMiddleware, userController.updateProfile.bind(userController));
+
+/**
+ * Get user list with pagination
+ */
+router.get(
+  '/user-list',
+  authMiddleware,
+  roleMiddleware(['super_admin']),
+  validateQuery(getUserListSchema),
+  userController.getUserList.bind(userController)
+);
+
 /**
  * Follow/Unfollow routes with rate limiting
  */
 // POST /api/users/follow - Follow a teacher
 // router.post('/follow', followRateLimit, userController.followTeacher.bind(userController));
-
 
 // DELETE /api/users/unfollow - Unfollow a teacher
 // router.delete('/unfollow', followRateLimit, userController.unfollowTeacher.bind(userController));

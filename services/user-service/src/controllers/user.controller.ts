@@ -31,9 +31,8 @@ export class UserController {
     next: NextFunction
   ): Promise<void> => {
     try {
-
       const profile = await this.userRepository.getUserProfile(req.user?.userId as string);
-      
+
       if (!profile) {
         throw new UserNotFoundError();
       }
@@ -44,6 +43,50 @@ export class UserController {
       res.status(200).json({
         success: true,
         data: validatedProfile,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Update user profile
+   * POST /api/users/profile
+   * Returns: updated profile
+   */
+  // updateProfile = async (
+  //   req: AuthenticatedRequest,
+  //   res: Response,
+  //   next: NextFunction
+  // ): Promise<void> => {
+
+  // };
+
+  /**
+   * Get user list with pagination
+   * GET /api/users/user-list
+   */
+  getUserList = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { page, limit, search, role } = req.query as {
+        page: string;
+        limit: string;
+        search: string;
+        role: 'student' | 'teacher' | undefined;
+      };
+      const users = await this.userRepository.getUsersLists(
+        parseInt(page, 10) || 1,
+        parseInt(limit, 10) || 10,
+        search,
+        role || 'student'
+      );
+      res.status(200).json({
+        success: true,
+        data: users,
       });
     } catch (error) {
       next(error);
@@ -62,7 +105,7 @@ export class UserController {
     try {
       // Validate request body
       const { teacherId } = FollowRequestSchema.parse(req.body);
-      
+
       // Security check: Only students can follow
       if (req.user?.role !== 'student') {
         throw new InvalidRoleError('Only students can follow teachers');
@@ -77,10 +120,7 @@ export class UserController {
       await this.userRepository.validateFollowOperation(req.user.userId, teacherId);
 
       // Check if already following
-      const isAlreadyFollowing = await this.userRepository.isFollowing(
-        req.user.userId,
-        teacherId
-      );
+      const isAlreadyFollowing = await this.userRepository.isFollowing(req.user.userId, teacherId);
 
       if (isAlreadyFollowing) {
         throw new AlreadyFollowingError();
@@ -114,7 +154,7 @@ export class UserController {
     try {
       // Validate request body
       const { teacherId } = FollowRequestSchema.parse(req.body);
-      
+
       // Security check: Only students can unfollow
       if (req.user?.role !== 'student') {
         throw new InvalidRoleError('Only students can unfollow teachers');
@@ -126,20 +166,14 @@ export class UserController {
       }
 
       // Check if currently following
-      const isFollowing = await this.userRepository.isFollowing(
-        req.user?.userId,
-        teacherId
-      );
+      const isFollowing = await this.userRepository.isFollowing(req.user?.userId, teacherId);
 
       if (!isFollowing) {
         throw new NotFollowingError();
       }
 
       // Perform unfollow operation
-      const unfollowed = await this.userRepository.unfollowTeacher(
-        req.user?.userId,
-        teacherId
-      );
+      const unfollowed = await this.userRepository.unfollowTeacher(req.user?.userId, teacherId);
 
       if (!unfollowed) {
         throw new NotFollowingError('Failed to unfollow - relationship not found');
