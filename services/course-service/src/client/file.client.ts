@@ -100,6 +100,7 @@ export class FileClient {
   }
 
   async deleteVideo(fileId: string, userId: string) {
+    console.log('delete video called');
     const { data } = await this.http.delete(`/api/videos/${fileId}`, {
       headers: {
         'x-user-id': userId,

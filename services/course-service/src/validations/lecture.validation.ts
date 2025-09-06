@@ -23,6 +23,27 @@ export const createLectureSchema = z.object({
     .optional(),
 });
 
+export const attachVideoSchema = z.object({
+  fileName: z.string().min(1),
+  fileSize: z
+    .number()
+    .positive()
+    .max(5 * 1024 * 1024 * 1024), // 5GB
+  contentType: z.string().regex(/^video\//, 'Must be a video file'),
+});
+
+export const playbackUrlSchema = z.object({
+  signed: z.boolean().default(false),
+  expirationHours: z.number().int().min(1).max(168).default(24), // Max 7 days
+});
+
+export function validateAttachVideo(data: unknown) {
+  return attachVideoSchema.safeParse(data);
+}
+export function validatePlaybackUrl(data: unknown) {
+  return playbackUrlSchema.safeParse(data);
+}
+
 export const updateLectureSchema = createLectureSchema.partial().omit({ courseId: true });
 
 export type CreateLectureInput = z.infer<typeof createLectureSchema>;

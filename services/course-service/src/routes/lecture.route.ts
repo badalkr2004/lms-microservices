@@ -29,6 +29,8 @@ router.get('/chapter/:chapterId', lectureController.getChapterLectures);
 router.get('/:id', lectureController.getLectureById);
 
 // Protected routes
+router.get('/:lectureId/playback-url', authenticate, lectureController.getLecturePlaybackUrl);
+
 router.post(
   '/',
   authenticate,
@@ -45,6 +47,12 @@ router.post(
   lectureController.createLectureWithVideo
 );
 
+router.get(
+  '/:courseId/video-status',
+  authenticate,
+  lectureController.getCourseLecturesWithVideoStatus
+);
+
 router.put(
   '/:id',
   authenticate,
@@ -54,6 +62,12 @@ router.put(
 );
 
 router.delete('/:id', authenticate, ...protectCourseDelete, lectureController.deleteLecture);
+router.put(
+  '/:lectureId/attach-video',
+  authenticate,
+  ...protectCourseUpdate,
+  lectureController.attachVideoToLecture
+);
 
 router.patch(
   '/course/:courseId/reorder',

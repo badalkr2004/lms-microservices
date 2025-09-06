@@ -59,6 +59,14 @@ export class LectureRepository {
     return (result?.maxSort as number) + 1;
   }
 
+  async getCourseLectures(courseId: string, userId: string, isActive: boolean = true) {
+    return await db
+      .select()
+      .from(courseLectures)
+      .where(and(eq(courseLectures.courseId, courseId), eq(courseLectures.isActive, isActive)))
+      .orderBy(asc(courseLectures.sortOrder));
+  }
+
   async reorder(
     courseId: string,
     lectureOrders: Array<{ id: string; sortOrder: number }>,

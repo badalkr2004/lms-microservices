@@ -34,6 +34,7 @@ export class VideoController {
    * POST /api/videos/upload
    */
   async initiateUpload(req: Request, res: Response, next: NextFunction): Promise<void> {
+    console.log(req.body);
     try {
       const parsed = validateVideoUpload(req.body);
       if (!parsed.success) {
