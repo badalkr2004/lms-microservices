@@ -17,6 +17,7 @@
     "@lms/common": "workspace:*",
     "@lms/database": "workspace:*",
     "@lms/logger": "workspace:*",
+    "@lms/shared-auth": "workspace:*",
     "@mux/mux-node": "12.6.1",
     "aws-sdk": "^2.1692.0",
     "compression": "^1.8.1",

@@ -16,6 +16,7 @@
     "@lms/common": "workspace:*",
     "@lms/database": "workspace:*",
     "@lms/logger": "workspace:*",
+    "@lms/shared-auth": "workspace:*",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "bullmq": "^5.56.7",

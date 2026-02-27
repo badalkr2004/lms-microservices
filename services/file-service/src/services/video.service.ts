@@ -709,9 +709,10 @@ export class VideoService {
       }
 
       // Generate new thumbnail
-      const thumbnailUrl = await muxService.createThumbnail(metadata.muxAssetId, {
-        time: Math.random() * (metadata.duration || 10), // Random time for variety
-      });
+      const thumbnailUrl = await muxService.createThumbnail(
+        metadata.muxAssetId,
+        Math.random() * (metadata.duration || 10) // Random time for variety
+      );
 
       // Update metadata
       const updatedMetadata = {

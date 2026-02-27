@@ -33,7 +33,7 @@ export const serviceAuthMiddleware = (
         serviceId,
         headers: req.headers,
       });
-      throw sendError(res, 'Service authentication required', HttpStatus.UNAUTHORIZED);
+      return sendError(res, 'Service authentication required', HttpStatus.UNAUTHORIZED);
     }
 
     // Validate timestamp (prevent replay attacks)
@@ -49,7 +49,7 @@ export const serviceAuthMiddleware = (
         currentTime,
         timeDiff,
       });
-      throw sendError(res, 'Request timestamp invalid', HttpStatus.UNAUTHORIZED);
+      return sendError(res, 'Request timestamp invalid', HttpStatus.UNAUTHORIZED);
     }
 
     // Validate service credentials
@@ -71,7 +71,7 @@ export const serviceAuthMiddleware = (
         serviceId,
         providedKey: serviceApiKey?.substring(0, 8) + '...',
       });
-      throw sendError(res, 'Invalid service credentials', HttpStatus.UNAUTHORIZED);
+      return sendError(res, 'Invalid service credentials', HttpStatus.UNAUTHORIZED);
     }
 
     // Verify HMAC signature
@@ -85,7 +85,7 @@ export const serviceAuthMiddleware = (
         expectedSignature: expectedSignature.substring(0, 8) + '...',
         providedSignature: signature.substring(0, 8) + '...',
       });
-      throw sendError(res, 'Invalid request signature', HttpStatus.UNAUTHORIZED);
+      return sendError(res, 'Invalid request signature', HttpStatus.UNAUTHORIZED);
     }
 
     // Authentication successful
@@ -94,6 +94,6 @@ export const serviceAuthMiddleware = (
     next();
   } catch (error) {
     logger.error('Service auth middleware error:', error);
-    throw sendError(res, 'Service authentication failed', HttpStatus.INTERNAL_SERVER_ERROR);
+    return sendError(res, 'Service authentication failed', HttpStatus.INTERNAL_SERVER_ERROR);
   }
 };

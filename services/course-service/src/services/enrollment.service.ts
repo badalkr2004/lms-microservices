@@ -2,11 +2,13 @@
 import { EnrollmentRepository } from '../repositories/enrollment.repository';
 import { CourseRepository } from '../repositories/course.repository';
 import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
+import { PaymentServiceClient } from '../client/payment.client';
 
 export class EnrollmentService {
   constructor(
     private enrollmentRepository: EnrollmentRepository,
-    private courseRepository: CourseRepository
+    private courseRepository: CourseRepository,
+    private paymentServiceClient: PaymentServiceClient
   ) {}
 
   async enrollInCourse(userId: string, courseId: string) {

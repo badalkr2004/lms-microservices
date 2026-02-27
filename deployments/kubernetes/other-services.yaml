@@ -1,0 +1,274 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: assessment-service
+  namespace: lms
+  labels:
+    app: assessment-service
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: assessment-service
+  template:
+    metadata:
+      labels:
+        app: assessment-service
+        tier: backend
+    spec:
+      containers:
+      - name: assessment-service
+        image: lms/assessment-service:latest
+        ports:
+        - containerPort: 3004
+        envFrom:
+        - configMapRef:
+            name: lms-config
+        - secretRef:
+            name: lms-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3004
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: assessment-service
+  namespace: lms
+spec:
+  selector:
+    app: assessment-service
+  ports:
+  - port: 3004
+    targetPort: 3004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: lms
+  labels:
+    app: analytics-service
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: analytics-service
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+        tier: backend
+    spec:
+      containers:
+      - name: analytics-service
+        image: lms/analytics-service:latest
+        ports:
+        - containerPort: 3005
+        envFrom:
+        - configMapRef:
+            name: lms-config
+        - secretRef:
+            name: lms-secrets
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3005
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+  namespace: lms
+spec:
+  selector:
+    app: analytics-service
+  ports:
+  - port: 3005
+    targetPort: 3005
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: lms
+  labels:
+    app: notification-service
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+        tier: backend
+    spec:
+      containers:
+      - name: notification-service
+        image: lms/notification-service:latest
+        ports:
+        - containerPort: 3006
+        envFrom:
+        - configMapRef:
+            name: lms-config
+        - secretRef:
+            name: lms-secrets
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3006
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: lms
+spec:
+  selector:
+    app: notification-service
+  ports:
+  - port: 3006
+    targetPort: 3006
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: live-session-service
+  namespace: lms
+  labels:
+    app: live-session-service
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: live-session-service
+  template:
+    metadata:
+      labels:
+        app: live-session-service
+        tier: backend
+    spec:
+      containers:
+      - name: live-session-service
+        image: lms/live-session-service:latest
+        ports:
+        - containerPort: 3007
+        envFrom:
+        - configMapRef:
+            name: lms-config
+        - secretRef:
+            name: lms-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3007
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: live-session-service
+  namespace: lms
+spec:
+  selector:
+    app: live-session-service
+  ports:
+  - port: 3007
+    targetPort: 3007
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-service
+  namespace: lms
+  labels:
+    app: file-service
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: file-service
+  template:
+    metadata:
+      labels:
+        app: file-service
+        tier: backend
+    spec:
+      containers:
+      - name: file-service
+        image: lms/file-service:latest
+        ports:
+        - containerPort: 3008
+        envFrom:
+        - configMapRef:
+            name: lms-config
+        - secretRef:
+            name: lms-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3008
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: file-service
+  namespace: lms
+spec:
+  selector:
+    app: file-service
+  ports:
+  - port: 3008
+    targetPort: 3008

@@ -1,3 +1,4 @@
+// index.ts
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -5,6 +6,8 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { errorHandler } from '@lms/common';
 import { logger } from '@lms/logger';
+import { paymentRoutes } from '@/routes/payment.route';
+import { payoutRoutes } from '@/routes/payout.route';
 
 // Load environment variables
 dotenv.config();
@@ -21,13 +24,16 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', service: 'payment-service' });
+  res.status(200).json({
+    status: 'ok',
+    service: 'payment-service',
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// Add routes here
-app.use('/api/payments', (req, res) => {
-  res.status(200).json({ message: 'Payment Service API - Ready to implement' });
-});
+// Routes
+app.use('/api/payments', paymentRoutes);
+app.use('/api/payouts', payoutRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

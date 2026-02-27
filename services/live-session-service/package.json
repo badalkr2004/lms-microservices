@@ -11,15 +11,14 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
-    "db:generate": "drizzle-kit generate:pg",
+    "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/migrate.ts"
   },
   "dependencies": {
     "@lms/common": "workspace:*",
     "@lms/database": "workspace:*",
     "@lms/logger": "workspace:*",
-    "@types/compression": "^1.8.1",
-    "@types/cors": "^2.8.19",
+    "@lms/shared-auth": "workspace:*",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
@@ -30,6 +29,8 @@
     "webrtc-adapter": "^9.0.3"
   },
   "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/supertest": "^6.0.3",
     "supertest": "^7.1.4",

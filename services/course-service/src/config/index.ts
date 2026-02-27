@@ -18,4 +18,10 @@ export const config = {
   fileService: {
     url: process.env.FILE_SERVICE_URL || 'http://localhost:3008',
   },
+  paymentService: {
+    url: process.env.PAYMENT_SERVICE_URL || 'http://localhost:3003',
+  },
+  courseServiceApiKey: process.env.COURSE_SERVICE_API_KEY,
+  serviceSecretKey: process.env.SERVICE_SECRET_KEY,
+  paymentServiceApiKey: process.env.PAYMENT_SERVICE_API_KEY,
 } as const;

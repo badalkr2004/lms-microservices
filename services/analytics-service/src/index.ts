@@ -22,7 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
-    service: 'User Service',
+    service: 'Analytics Service',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
   });

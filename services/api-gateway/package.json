@@ -14,9 +14,7 @@
   "dependencies": {
     "@lms/common": "workspace:*",
     "@lms/logger": "workspace:*",
-    "@types/compression": "^1.8.1",
-    "@types/cors": "^2.8.19",
-    "@types/morgan": "^1.9.10",
+    "@lms/shared-auth": "workspace:*",
     "axios": "1.11.0",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
@@ -29,7 +27,10 @@
     "path-to-regexp": "^6.2.1"
   },
   "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/morgan": "^1.9.10",
     "@types/supertest": "^6.0.3",
     "supertest": "^7.1.4",
     "vitest": "^3.2.4"

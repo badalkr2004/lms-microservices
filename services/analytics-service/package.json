@@ -10,13 +10,14 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
-    "db:generate": "drizzle-kit generate:pg",
+    "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/migrate.ts"
   },
   "dependencies": {
     "@lms/common": "workspace:*",
     "@lms/database": "workspace:*",
     "@lms/logger": "workspace:*",
+    "@lms/shared-auth": "workspace:*",
     "bullmq": "^5.56.7",
     "compression": "^1.8.1",
     "cors": "^2.8.5",

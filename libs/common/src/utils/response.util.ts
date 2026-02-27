@@ -34,10 +34,11 @@ export const sendError = (
   message = 'An error occurred',
   statusCode = 500,
   error?: any
-): Response => {
-  return res.status(statusCode).json({
+): never => {
+  res.status(statusCode).json({
     status: 'error',
     message,
     error: process.env.NODE_ENV === 'development' ? error : undefined,
   });
+  throw new Error(message);
 };

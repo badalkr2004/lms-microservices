@@ -10,7 +10,7 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
-    "db:generate": "drizzle-kit generate:pg",
+    "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/migrate.ts"
   },
   "dependencies": {
@@ -18,9 +18,6 @@
     "@lms/database": "workspace:*",
     "@lms/logger": "workspace:*",
     "@lms/shared-auth": "workspace:*",
-    "@types/compression": "^1.8.1",
-    "@types/cors": "^2.8.19",
-    "@types/morgan": "^1.9.10",
     "axios": "1.11.0",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
@@ -35,7 +32,10 @@
     "zod": "^4.0.10"
   },
   "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/morgan": "^1.9.10",
     "@types/multer": "^2.0.0",
     "@types/supertest": "^6.0.3",
     "supertest": "^7.1.4",

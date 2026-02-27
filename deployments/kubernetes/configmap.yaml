@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lms-config
+  namespace: lms
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  
+  # Service Ports
+  API_GATEWAY_PORT: "3000"
+  USER_SERVICE_PORT: "3001"
+  COURSE_SERVICE_PORT: "3002"
+  PAYMENT_SERVICE_PORT: "3003"
+  ASSESSMENT_SERVICE_PORT: "3004"
+  ANALYTICS_SERVICE_PORT: "3005"
+  NOTIFICATION_SERVICE_PORT: "3006"
+  LIVE_SESSION_SERVICE_PORT: "3007"
+  FILE_SERVICE_PORT: "3008"
+  
+  # Service URLs (internal)
+  USER_SERVICE_URL: "http://user-service:3001"
+  COURSE_SERVICE_URL: "http://course-service:3002"
+  PAYMENT_SERVICE_URL: "http://payment-service:3003"
+  ASSESSMENT_SERVICE_URL: "http://assessment-service:3004"
+  ANALYTICS_SERVICE_URL: "http://analytics-service:3005"
+  NOTIFICATION_SERVICE_URL: "http://notification-service:3006"
+  LIVE_SESSION_SERVICE_URL: "http://live-session-service:3007"
+  FILE_SERVICE_URL: "http://file-service:3008"
+  
+  # Rate Limiting
+  RATE_LIMIT_WINDOW_MS: "900000"
+  RATE_LIMIT_MAX_REQUESTS: "100"
+  
+  # CORS
+  ALLOWED_ORIGINS: "https://yourdomain.com,https://app.yourdomain.com"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lms-config-staging
+  namespace: lms-staging
+data:
+  NODE_ENV: "staging"
+  LOG_LEVEL: "debug"
+  
+  # Service Ports
+  API_GATEWAY_PORT: "3000"
+  USER_SERVICE_PORT: "3001"
+  COURSE_SERVICE_PORT: "3002"
+  PAYMENT_SERVICE_PORT: "3003"
+  ASSESSMENT_SERVICE_PORT: "3004"
+  ANALYTICS_SERVICE_PORT: "3005"
+  NOTIFICATION_SERVICE_PORT: "3006"
+  LIVE_SESSION_SERVICE_PORT: "3007"
+  FILE_SERVICE_PORT: "3008"
+  
+  # Service URLs (internal)
+  USER_SERVICE_URL: "http://user-service:3001"
+  COURSE_SERVICE_URL: "http://course-service:3002"
+  PAYMENT_SERVICE_URL: "http://payment-service:3003"
+  ASSESSMENT_SERVICE_URL: "http://assessment-service:3004"
+  ANALYTICS_SERVICE_URL: "http://analytics-service:3005"
+  NOTIFICATION_SERVICE_URL: "http://notification-service:3006"
+  LIVE_SESSION_SERVICE_URL: "http://live-session-service:3007"
+  FILE_SERVICE_URL: "http://file-service:3008"
+  
+  # Rate Limiting
+  RATE_LIMIT_WINDOW_MS: "900000"
+  RATE_LIMIT_MAX_REQUESTS: "1000"
+  
+  # CORS
+  ALLOWED_ORIGINS: "*"

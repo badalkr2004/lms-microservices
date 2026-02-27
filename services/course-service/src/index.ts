@@ -17,6 +17,7 @@ import { reviewRoutes } from './routes/review.routes';
 
 import { errorHandler, notFound } from './middleware/error.middleware';
 import { HealthService } from './utils/health';
+import { internalRoutes } from './routes/internal.routes';
 
 const app: Express = express();
 const healthService = new HealthService();
@@ -42,6 +43,7 @@ app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/internal', internalRoutes);
 
 // Health check endpoints
 app.get('/health', async (req, res) => {
