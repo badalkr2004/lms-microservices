@@ -138,12 +138,19 @@ export class PaymentService {
         transactionId: data.transactionId,
       });
 
-      // Create enrollment
-      // await this.courseServiceClient.createEnrollment({
-      //   userId: payment.userId,
-      //   courseId: payment.courseId!,
-      //   paymentId: paymentId,
-      // });
+      // Create enrollment via Course Service
+      if (payment.courseId) {
+        try {
+          await this.courseServiceClient.completeEnrollment(
+            payment.userId,
+            payment.courseId,
+            paymentId
+          );
+        } catch (error) {
+          console.error('Failed to create enrollment:', error);
+          // TODO: Queue for retry or manual handling
+        }
+      }
 
       // Calculate and create teacher earnings
       await this.calculateTeacherEarnings(payment);
@@ -184,8 +191,15 @@ export class PaymentService {
       paymentGatewayResponse: refundResponse.metadata,
     });
 
-    // Handle enrollment status (drop enrollment)
-    // await this.enrollmentClient.dropEnrollment(payment.userId, payment.courseId!);
+    // Drop enrollment on refund
+    if (payment.courseId) {
+      try {
+        await this.courseServiceClient.dropEnrollment(payment.userId, payment.courseId);
+      } catch (error) {
+        console.error('Failed to drop enrollment:', error);
+        // TODO: Queue for retry or manual handling
+      }
+    }
 
     return { success: true, refundAmount: data.amount || parseFloat(payment.amount) };
   }

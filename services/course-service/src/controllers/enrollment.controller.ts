@@ -133,4 +133,40 @@ export class EnrollmentController {
       next(error);
     }
   };
+
+  /**
+   * Complete enrollment after successful payment (internal service endpoint)
+   * Called by Payment Service via service-to-service authentication
+   */
+  completeEnrollment = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const { userId, courseId, paymentId } = req.body;
+      
+      // Create enrollment for paid course
+      const enrollment = await this.enrollmentService.enrollInCourse(userId, courseId);
+      
+      successResponse(res, 'Enrollment completed successfully', {
+        enrollment,
+        paymentId,
+      }, 201);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Drop enrollment on refund (internal service endpoint)
+   * Called by Payment Service via service-to-service authentication
+   */
+  dropEnrollmentInternal = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const { userId, courseId } = req.body;
+      
+      const result = await this.enrollmentService.dropEnrollment(userId, courseId);
+      
+      successResponse(res, 'Enrollment dropped successfully', result);
+    } catch (error) {
+      next(error);
+    }
+  };
 }

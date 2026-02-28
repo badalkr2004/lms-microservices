@@ -27,10 +27,20 @@ export class CourseServiceClient {
     };
   }
 
-  async completeEnrollment(enrollmentId: string, paymentId: string) {
-    const data = { enrollmentId, paymentId };
+  async completeEnrollment(userId: string, courseId: string, paymentId: string) {
+    const data = { userId, courseId, paymentId };
 
-    const response = await axios.post(`${this.baseURL}/api/enrollments/internal/complete`, data, {
+    const response = await axios.post(`${this.baseURL}/internal/enrollments/complete`, data, {
+      headers: this.generateAuthHeaders(data),
+    });
+
+    return response.data.data;
+  }
+
+  async dropEnrollment(userId: string, courseId: string) {
+    const data = { userId, courseId };
+
+    const response = await axios.post(`${this.baseURL}/internal/enrollments/drop`, data, {
       headers: this.generateAuthHeaders(data),
     });
 
