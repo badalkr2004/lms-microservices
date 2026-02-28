@@ -3,7 +3,7 @@ import { verifyAccessToken } from '../utils/jwt.utils';
 import { AuthRequest } from '../types/auth.types';
 import { logger } from '@lms/logger';
 
-export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction):any => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -29,7 +29,7 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
 };
 
 export const roleMiddleware = (allowedRoles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+  return (req: AuthRequest, res: Response, next: NextFunction):any => {
     if (!req.user) {
       return res.status(401).json({
         success: false,

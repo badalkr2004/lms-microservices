@@ -24,7 +24,7 @@ export const rateLimitMiddleware = (options: RateLimitOptions) => {
     // Use user ID as the key for authenticated requests
     keyGenerator: (req: Request): string => {
       const authReq = req as AuthenticatedRequest;
-      return authReq.user?.id || req.ip || 'unknown';
+      return authReq.user?.userId || req.ip || 'unknown';
     },
     
     // Custom response
